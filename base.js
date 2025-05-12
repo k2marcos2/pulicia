@@ -1,13 +1,35 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.querySelector('form');
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.querySelector("form");
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener("submit", async function (e) {
         e.preventDefault();
 
-        // Exemplo de ação: exibir alerta de sucesso
-        alert("Formulário enviado com sucesso!");
+        const formData = new FormData(form);
+        const data = {};
 
-        // Aqui você pode adicionar lógica para enviar os dados, se necessário
-        // como via fetch() para um backend
+        formData.forEach((value, key) => {
+            if (data[key]) {
+                data[key] += `, ${value}`; // Agrupa valores de checkboxes com o mesmo nome
+            } else {
+                data[key] = value;
+            }
+        });
+
+        try {
+            await fetch("https://script.google.com/macros/s/AKfycbws5SEJCXlXydZbYcxwnzAYjBvJzCYrK4OeBgpmtNKFem8P3WT9im-YBKGk5N3f2CMN_g/exec", {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            alert("Formulário enviado com sucesso!");
+            form.reset();
+        } catch (error) {
+            console.error("Erro ao enviar:", error);
+            alert("Erro ao enviar o formulário.");
+        }
     });
 });
