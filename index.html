@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check List - Cautela de Viaturas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>Check list de Cautela de Viaturas - 1º BPM</h2>
+    <form enctype="multipart/form-data">
+        <label>Motorista (posto/graduação + nome + RG)*</label>
+        <input type="text" required>
+
+        <label>Cautela - Data e Hora*</label>
+        <input type="date" required>
+        <input type="time" required>
+
+        <label>Data de Validade da CNH*</label>
+        <input type="date" required>
+
+        <label>Categoria da CNH</label>
+        <input type="text">
+
+        <label>1. Veículo*</label>
+        <input type="text" required>
+
+        <label>2. Prefixo*</label>
+        <input type="text" required>
+
+        <label>3. Placa*</label>
+        <input type="text" required>
+
+        <label>4. Km atual*</label>
+        <input type="number" required>
+
+        <label>Km da próx. revisão</label>
+        <input type="number">
+
+        <label>5. Nível de água do radiador</label>
+        <select>
+            <option>Normal</option>
+            <option>Baixo</option>
+        </select>
+
+        <label>Nível do óleo do motor*</label>
+        <select required>
+            <option>Normal</option>
+            <option>Baixo</option>
+        </select>
+
+        <label>6. Nível do combustível*</label>
+        <select required>
+            <option>1/1</option>
+            <option>3/4</option>
+            <option>1/2</option>
+            <option>1/4</option>
+            <option>Reserva</option>
+            <option>Outro</option>
+        </select>
+
+        <label>7. Pneus*</label>
+        <select required>
+            <option>Bons</option>
+            <option>Gastos/careca</option>
+            <option>Outro</option>
+        </select>
+
+        <label>8. Giroflex e Sirene*</label>
+        <select required>
+            <option>Funcionam</option>
+            <option>Giroflex danificado</option>
+            <option>Sirene danificada</option>
+            <option>Nenhum funciona</option>
+            <option>Outro</option>
+        </select>
+
+        <label>9. Lâmpadas queimadas</label>
+        <textarea rows="4" placeholder="Ex: Farolete Direito, Luz de Freio Esquerdo..."></textarea>
+
+        <label>10. Parabrisa*</label>
+        <select required>
+            <option>Perfeito estado</option>
+            <option>Danificado</option>
+            <option>Outro</option>
+        </select>
+
+        <label>11. Rádio*</label>
+        <select required>
+            <option>Funcionando</option>
+            <option>Não funciona</option>
+            <option>Outro</option>
+        </select>
+
+        <label>12. Equipamentos Obrigatórios</label>
+        <div class="checkbox-group">
+            <label><input type="checkbox"> Chave de roda</label>
+            <label><input type="checkbox"> Macaco</label>
+            <label><input type="checkbox"> Pneu de step</label>
+            <label><input type="checkbox"> Triângulo</label>
+            <label><input type="checkbox"> Cones</label>
+        </div>
+
+        <label>Quantidade de cones</label>
+        <input type="number">
+
+        <label>13. Outros Problemas - Descrever</label>
+        <textarea rows="4"></textarea>
+
+        <label>Foto</label>
+        <input type="file" accept="image/*">
+
+        <br><br>
+        <button type="submit">Enviar</button>
+    </form>
+    <script src="script.js"></script>
+</body>
+</html>
