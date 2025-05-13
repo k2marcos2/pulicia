@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Check List - Cautela de Viaturas</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
 </head>
 <body>
   <h2>Check list de Cautela de Viaturas - 1º BPM</h2>
@@ -109,11 +110,17 @@
     <label>13. Outros Problemas - Descrever</label>
     <textarea name="OutrosProblemas" rows="4"></textarea>
 
-    <button type="submit">Enviar</button>
-
     <label>Foto do Motorista*</label>
     <input type="file" name="FotoMotorista" id="foto-motorista" accept="image/*" capture="environment" required>
     <small>Por favor, tire uma foto do motorista com a viatura</small>
+
+    <label>Assinatura Digital*</label>
+    <canvas id="signature-pad" width="400" height="200" style="border:1px solid #ccc; background:#f9f9f9;"></canvas>
+    <button type="button" id="clear-signature">Limpar Assinatura</button>
+    <input type="hidden" name="AssinaturaBase64" id="assinatura-base64" required>
+    <small>Assine no quadro acima usando o mouse ou dedo (em dispositivos touch)</small>
+
+     <button type="submit">Enviar</button>
   </form>
 
   <script src="base.js"></script>
