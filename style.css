@@ -50,3 +50,15 @@ button {
 button:hover {
     background-color: #003080;
 }
+#foto-motorista {
+  padding: 5px;
+  border: 1px dashed #ccc;
+  background: #f9f9f9;
+}
+
+small {
+  display: block;
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 5px;
+}
