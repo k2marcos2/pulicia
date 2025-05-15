@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Check List - Cautela de Viaturas</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Checklist - Cautela de Viaturas</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
 </head>
 <body>
-  <h2>Check list de Cautela de Viaturas - 1º BPM</h2>
+  <h2>Checklist de Cautela de Viaturas - 1º BPM</h2>
+
   <form id="checklist-form">
     <label>Motorista*</label>
     <input type="text" name="Motorista" required>
 
-    <label>Data da Cautela*</label>
+    <label>Data e Hora da Cautela*</label>
     <input type="date" name="DataCautela" required>
+    <input type="time" name="HoraCautela" required>
 
-    <label>Hora da Cautela*</label>
-    <input type="time" name="HoraCautela" required step="60">
-
-    <label>Data de Validade da CNH*</label>
+    <label>Validade da CNH*</label>
     <input type="date" name="ValidadeCNH" required>
 
     <label>Categoria da CNH</label>
@@ -34,25 +34,25 @@
     <label>3. Placa*</label>
     <input type="text" name="Placa" required>
 
-    <label>4. Km atual*</label>
+    <label>4. Km Atual*</label>
     <input type="number" name="KmAtual" required>
 
-    <label>Km da próx. revisão</label>
+    <label>Km da Próx. Revisão</label>
     <input type="number" name="KmProxRevisao">
 
-    <label>5. Nível de água do radiador</label>
+    <label>5. Nível de Água do Radiador</label>
     <select name="NivelAgua">
       <option>Normal</option>
       <option>Baixo</option>
     </select>
 
-    <label>Nível do óleo do motor*</label>
+    <label>Nível do Óleo do Motor*</label>
     <select name="NivelOleo" required>
       <option>Normal</option>
       <option>Baixo</option>
     </select>
 
-    <label>6. Nível do combustível*</label>
+    <label>6. Nível do Combustível*</label>
     <select name="NivelCombustivel" required>
       <option>1/1</option>
       <option>3/4</option>
@@ -96,7 +96,7 @@
     </select>
 
     <label>12. Equipamentos Obrigatórios</label>
-    <div>
+    <div class="checkbox-group">
       <label><input type="checkbox" name="EquipamentosObrigatorios" value="Chave de roda"> Chave de roda</label>
       <label><input type="checkbox" name="EquipamentosObrigatorios" value="Macaco"> Macaco</label>
       <label><input type="checkbox" name="EquipamentosObrigatorios" value="Pneu de step"> Pneu de step</label>
@@ -104,23 +104,22 @@
       <label><input type="checkbox" name="EquipamentosObrigatorios" value="Cones"> Cones</label>
     </div>
 
-    <label>Quantidade de cones</label>
+    <label>Quantidade de Cones</label>
     <input type="number" name="QtdCones">
 
     <label>13. Outros Problemas - Descrever</label>
     <textarea name="OutrosProblemas" rows="4"></textarea>
 
-    <label>Foto do Motorista*</label>
-    <input type="file" name="FotoMotorista" id="foto-motorista" accept="image/*" capture="environment" required>
-    <small>Por favor, tire uma foto do motorista com a viatura</small>
+    <label>Fotos e Vídeos da Viatura</label>
+    <input type="file" id="midia" name="midia" accept="image/*,video/*" multiple>
 
-    <label>Assinatura Digital*</label>
-    <canvas id="signature-pad" width="400" height="200" style="border:1px solid #ccc; background:#f9f9f9;"></canvas>
+    <label>Assinatura:</label>
+    <canvas id="signature-pad" width="300" height="150" style="border:1px solid #000;"></canvas>
+    <input type="hidden" name="AssinaturaBase64" id="assinatura-base64">
     <button type="button" id="clear-signature">Limpar Assinatura</button>
-    <input type="hidden" name="AssinaturaBase64" id="assinatura-base64" required>
-    <small>Assine no quadro acima usando o mouse ou dedo (em dispositivos touch)</small>
 
-     <button type="submit">Enviar</button>
+    <br><br>
+    <button type="submit">Enviar</button>
   </form>
 
   <script src="base.js"></script>
