@@ -59,15 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbxN_dJPA14vVdjYMs66NT8oLUIBFehGTvGfpRcfQ2XXyagd7efOae2g4MlttwZYRP5H0g/exec", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbwuFa0AXJQPWSl93EVRL9PCBIcCFUesJO9QSaY0HaCTmdLyvLEP6uFsotZUEWlEE64qvQ/exec", {
         method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        body: JSON.stringify(data)
       });
-
       alert("Formulário enviado com sucesso!");
       form.reset();
       signaturePad.clear(); // Limpa a assinatura após envio
@@ -86,4 +81,53 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.onerror = error => reject(error);
     });
   }
+  function criarPDF(data, assinaturaURL, fotoURL, folderId) {
+  const doc = DocumentApp.create(`Cautela - ${data.Motorista || 'Motorista'}`);
+  const body = doc.getBody();
+
+  body.appendParagraph("CHECKLIST DE CAUTELA DE VIATURA").setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  body.appendParagraph(`Data de envio: ${new Date().toLocaleString("pt-BR")}`);
+  body.appendParagraph(`Motorista: ${data.Motorista || ""}`);
+  body.appendParagraph(`Data da Cautela: ${data.DataCautela || ""}`);
+  body.appendParagraph(`Hora da Cautela: ${data.HoraCautela || ""}`);
+  body.appendParagraph(`Validade CNH: ${data.ValidadeCNH || ""}`);
+  body.appendParagraph(`Categoria CNH: ${data.CategoriaCNH || ""}`);
+  body.appendParagraph(`Veículo: ${data.Veiculo || ""}`);
+  body.appendParagraph(`Prefixo: ${data.Prefixo || ""}`);
+  body.appendParagraph(`Placa: ${data.Placa || ""}`);
+  body.appendParagraph(`Km Atual: ${data.KmAtual || ""}`);
+  body.appendParagraph(`Km Próxima Revisão: ${data.KmProxRevisao || ""}`);
+  body.appendParagraph(`Nível de Água: ${data.NivelAgua || ""}`);
+  body.appendParagraph(`Óleo do Motor: ${data.NivelOleo || ""}`);
+  body.appendParagraph(`Combustível: ${data.NivelCombustivel || ""}`);
+  body.appendParagraph(`Pneus: ${data.Pneus || ""}`);
+  body.appendParagraph(`Giroflex/Sirene: ${data.GiroflexSirene || ""}`);
+  body.appendParagraph(`Lâmpadas Queimadas: ${data.LampadasQueimadas || ""}`);
+  body.appendParagraph(`Parabrisa: ${data.Parabrisa || ""}`);
+  body.appendParagraph(`Rádio: ${data.Radio || ""}`);
+  body.appendParagraph(`Equipamentos Obrigatórios: ${data.EquipamentosObrigatorios || ""}`);
+  body.appendParagraph(`Quantidade de Cones: ${data.QtdCones || ""}`);
+  body.appendParagraph(`Outros Problemas: ${data.OutrosProblemas || ""}`);
+  body.appendParagraph(`Foto da Viatura: ${fotoURL}`);
+
+  // Inserir a imagem da assinatura
+  if (assinaturaURL !== "Sem assinatura" && assinaturaURL !== "Erro no upload") {
+    try {
+      const response = UrlFetchApp.fetch(assinaturaURL);
+      const blob = response.getBlob();
+      body.appendParagraph("Assinatura:");
+      body.appendImage(blob);
+    } catch (e) {
+      body.appendParagraph("⚠ Erro ao carregar assinatura.");
+    }
+  }
+
+  doc.saveAndClose();
+  const pdf = DriveApp.getFileById(doc.getId()).getAs("application/pdf");
+
+  const folder = DriveApp.getFolderById(folderId);
+  const pdfFile = folder.createFile(pdf);
+  return pdfFile.getUrl();
+}
+
 });
