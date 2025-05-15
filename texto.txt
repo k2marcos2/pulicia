@@ -9,81 +9,60 @@ function doPost(e) {
     const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
     const data = JSON.parse(e.postData.contents);
 
-    // Processar foto
-    let fotoURL = "Sem foto";
-    if (data.FotoBase64 && data.FotoNome) {
-      try {
-        const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-        const blob = Utilities.newBlob(
-          Utilities.base64Decode(data.FotoBase64),
-          "image/jpeg",
-          data.FotoNome
-        );
-        const file = folder.createFile(blob);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        fotoURL = getDirectDownloadLink(file);
-      } catch (fotoError) {
-        fotoURL = "Erro no upload";
+    let midiaLinks = [];
+    if (data.Midias && Array.isArray(data.Midias)) {
+      const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+      for (let item of data.Midias) {
+        try {
+          const blob = Utilities.newBlob(Utilities.base64Decode(item.base64), item.tipo, item.nome);
+          const file = folder.createFile(blob);
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          midiaLinks.push(getDirectDownloadLink(file));
+        } catch (e) {
+          midiaLinks.push("Erro em " + item.nome);
+        }
       }
     }
 
-    // Processar assinatura
     let assinaturaURL = "Sem assinatura";
     if (data.AssinaturaBase64) {
-      try {
-        const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-        const blob = Utilities.newBlob(
-          Utilities.base64Decode(data.AssinaturaBase64.split(',')[1]),
-          "image/png",
-          `assinatura_${data.Motorista || 'sem_nome'}_${new Date().getTime()}.png`
-        );
-        const file = folder.createFile(blob);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        assinaturaURL = getDirectDownloadLink(file);
-      } catch (error) {
-        assinaturaURL = "Erro no upload";
-      }
+      const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+      const blob = Utilities.newBlob(
+        Utilities.base64Decode(data.AssinaturaBase64.split(',')[1]),
+        "image/png",
+        `assinatura_${data.Motorista}_${Date.now()}.png`
+      );
+      const file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      assinaturaURL = getDirectDownloadLink(file);
     }
 
-    // Gerar PDF
-    const pdfURL = criarPDF(data, assinaturaURL, fotoURL, DRIVE_FOLDER_ID);
+    const pdfURL = criarPDF(data, assinaturaURL, midiaLinks, DRIVE_FOLDER_ID);
 
-    // Formatar datas
-    const formatarData = (dataString) => {
-      if (!dataString) return "";
-      try {
-        const date = new Date(dataString);
-        return date.toLocaleDateString("pt-BR");
-      } catch {
-        return dataString;
-      }
-    };
-
-    // Salvar na planilha
     const novaLinha = [
       new Date().toLocaleString("pt-BR"),
-      data["Motorista"] || "",
-      formatarData(data["DataCautela"]),
-      data["HoraCautela"] || "",
-      formatarData(data["ValidadeCNH"]),
-      data["CategoriaCNH"] || "",
-      data["Veiculo"] || "",
-      data["Prefixo"] || "",
-      data["Placa"] || "",
-      data["KmAtual"] || "",
-      data["KmProxRevisao"] || "",
-      data["NivelAgua"] || "",
-      data["NivelOleo"] || "",
-      data["NivelCombustivel"] || "",
-      data["Pneus"] || "",
-      data["GiroflexSirene"] || "",
-      data["LampadasQueimadas"] || "",
-      data["Parabrisa"] || "",
-      data["Radio"] || "",
-      data["EquipamentosObrigatorios"] || "",
-      data["QtdCones"] || "",
-      data["OutrosProblemas"] || "",
-      fotoURL,
+      data.Motorista || "",
+      data.DataCautela || "",
+      data.HoraCautela || "",
+      data.ValidadeCNH || "",
+      data.CategoriaCNH || "",
+      data.Veiculo || "",
+      data.Prefixo || "",
+      data.Placa || "",
+      data.KmAtual || "",
+      data.KmProxRevisao || "",
+      data.NivelAgua || "",
+      data.NivelOleo || "",
+      data.NivelCombustivel || "",
+      data.Pneus || "",
+      data.GiroflexSirene || "",
+      data.LampadasQueimadas || "",
+      data.Parabrisa || "",
+      data.Radio || "",
+      data.EquipamentosObrigatorios || "",
+      data.QtdCones || "",
+      data.OutrosProblemas || "",
+      midiaLinks.join(" | "),
       assinaturaURL,
       pdfURL
     ];
@@ -91,16 +70,11 @@ function doPost(e) {
     sheet.appendRow(novaLinha);
 
     return ContentService.createTextOutput(
-      JSON.stringify({ status: "success", message: "Dados e PDF salvos com sucesso!" })
+      JSON.stringify({ status: "success", message: "Enviado com sucesso!" })
     ).setMimeType(ContentService.MimeType.JSON);
-
-  } catch (erro) {
+  } catch (err) {
     return ContentService.createTextOutput(
-      JSON.stringify({
-        status: "error",
-        message: erro.toString(),
-        stack: erro.stack
-      })
+      JSON.stringify({ status: "error", message: err.toString() })
     ).setMimeType(ContentService.MimeType.JSON);
   }
 }
@@ -108,7 +82,7 @@ function doPost(e) {
 
 code do PDF.gs
 
-function criarPDF(data, assinaturaURL, fotoURL, folderId) {
+function criarPDF(data, assinaturaURL, midiaLinks, folderId) {
   const doc = DocumentApp.create(`Cautela - ${data.Motorista || 'Motorista'}`);
   const body = doc.getBody();
 
@@ -137,17 +111,16 @@ function criarPDF(data, assinaturaURL, fotoURL, folderId) {
     ["Equipamentos Obrigatórios", data.EquipamentosObrigatorios],
     ["Quantidade de Cones", data.QtdCones],
     ["Outros Problemas", data.OutrosProblemas],
-    ["Foto da Viatura (link)", fotoURL]
+    ["Mídias (links)", midiaLinks.join(" | ")]
   ];
 
   campos.forEach(([titulo, valor]) => {
     body.appendParagraph(`${titulo}: ${valor || "Não informado"}`);
   });
 
-  if (assinaturaURL !== "Sem assinatura" && assinaturaURL !== "Erro no upload") {
+  if (assinaturaURL && assinaturaURL !== "Sem assinatura" && assinaturaURL !== "Erro no upload") {
     try {
-      const response = UrlFetchApp.fetch(assinaturaURL);
-      const blob = response.getBlob();
+      const blob = UrlFetchApp.fetch(assinaturaURL).getBlob();
       body.appendParagraph("Assinatura:");
       body.appendImage(blob);
     } catch (e) {
@@ -159,6 +132,11 @@ function criarPDF(data, assinaturaURL, fotoURL, folderId) {
   const pdf = DriveApp.getFileById(doc.getId()).getAs("application/pdf");
   const folder = DriveApp.getFolderById(folderId);
   const pdfFile = folder.createFile(pdf);
+  pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-  return pdfFile.getUrl();
+  return getDirectDownloadLink(pdfFile);
+}
+
+function getDirectDownloadLink(file) {
+  return `https://drive.google.com/uc?export=view&id=${file.getId()}`;
 }
