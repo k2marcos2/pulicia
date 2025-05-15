@@ -1,0 +1,164 @@
+code do code.gs
+
+function doPost(e) {
+  try {
+    const SPREADSHEET_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
+    const SHEET_NAME = "RESPOSTAS";
+    const DRIVE_FOLDER_ID = "1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w";
+
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
+    const data = JSON.parse(e.postData.contents);
+
+    // Processar foto
+    let fotoURL = "Sem foto";
+    if (data.FotoBase64 && data.FotoNome) {
+      try {
+        const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        const blob = Utilities.newBlob(
+          Utilities.base64Decode(data.FotoBase64),
+          "image/jpeg",
+          data.FotoNome
+        );
+        const file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        fotoURL = getDirectDownloadLink(file);
+      } catch (fotoError) {
+        fotoURL = "Erro no upload";
+      }
+    }
+
+    // Processar assinatura
+    let assinaturaURL = "Sem assinatura";
+    if (data.AssinaturaBase64) {
+      try {
+        const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        const blob = Utilities.newBlob(
+          Utilities.base64Decode(data.AssinaturaBase64.split(',')[1]),
+          "image/png",
+          `assinatura_${data.Motorista || 'sem_nome'}_${new Date().getTime()}.png`
+        );
+        const file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        assinaturaURL = getDirectDownloadLink(file);
+      } catch (error) {
+        assinaturaURL = "Erro no upload";
+      }
+    }
+
+    // Gerar PDF
+    const pdfURL = criarPDF(data, assinaturaURL, fotoURL, DRIVE_FOLDER_ID);
+
+    // Formatar datas
+    const formatarData = (dataString) => {
+      if (!dataString) return "";
+      try {
+        const date = new Date(dataString);
+        return date.toLocaleDateString("pt-BR");
+      } catch {
+        return dataString;
+      }
+    };
+
+    // Salvar na planilha
+    const novaLinha = [
+      new Date().toLocaleString("pt-BR"),
+      data["Motorista"] || "",
+      formatarData(data["DataCautela"]),
+      data["HoraCautela"] || "",
+      formatarData(data["ValidadeCNH"]),
+      data["CategoriaCNH"] || "",
+      data["Veiculo"] || "",
+      data["Prefixo"] || "",
+      data["Placa"] || "",
+      data["KmAtual"] || "",
+      data["KmProxRevisao"] || "",
+      data["NivelAgua"] || "",
+      data["NivelOleo"] || "",
+      data["NivelCombustivel"] || "",
+      data["Pneus"] || "",
+      data["GiroflexSirene"] || "",
+      data["LampadasQueimadas"] || "",
+      data["Parabrisa"] || "",
+      data["Radio"] || "",
+      data["EquipamentosObrigatorios"] || "",
+      data["QtdCones"] || "",
+      data["OutrosProblemas"] || "",
+      fotoURL,
+      assinaturaURL,
+      pdfURL
+    ];
+
+    sheet.appendRow(novaLinha);
+
+    return ContentService.createTextOutput(
+      JSON.stringify({ status: "success", message: "Dados e PDF salvos com sucesso!" })
+    ).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (erro) {
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        status: "error",
+        message: erro.toString(),
+        stack: erro.stack
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+
+code do PDF.gs
+
+function criarPDF(data, assinaturaURL, fotoURL, folderId) {
+  const doc = DocumentApp.create(`Cautela - ${data.Motorista || 'Motorista'}`);
+  const body = doc.getBody();
+
+  body.appendParagraph("CHECKLIST DE CAUTELA DE VIATURA").setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  body.appendParagraph(`Data de envio: ${new Date().toLocaleString("pt-BR")}`);
+
+  const campos = [
+    ["Motorista", data.Motorista],
+    ["Data da Cautela", data.DataCautela],
+    ["Hora da Cautela", data.HoraCautela],
+    ["Validade CNH", data.ValidadeCNH],
+    ["Categoria CNH", data.CategoriaCNH],
+    ["Veículo", data.Veiculo],
+    ["Prefixo", data.Prefixo],
+    ["Placa", data.Placa],
+    ["Km Atual", data.KmAtual],
+    ["Km Próxima Revisão", data.KmProxRevisao],
+    ["Nível de Água", data.NivelAgua],
+    ["Óleo do Motor", data.NivelOleo],
+    ["Combustível", data.NivelCombustivel],
+    ["Pneus", data.Pneus],
+    ["Giroflex/Sirene", data.GiroflexSirene],
+    ["Lâmpadas Queimadas", data.LampadasQueimadas],
+    ["Parabrisa", data.Parabrisa],
+    ["Rádio", data.Radio],
+    ["Equipamentos Obrigatórios", data.EquipamentosObrigatorios],
+    ["Quantidade de Cones", data.QtdCones],
+    ["Outros Problemas", data.OutrosProblemas],
+    ["Foto da Viatura (link)", fotoURL]
+  ];
+
+  campos.forEach(([titulo, valor]) => {
+    body.appendParagraph(`${titulo}: ${valor || "Não informado"}`);
+  });
+
+  if (assinaturaURL !== "Sem assinatura" && assinaturaURL !== "Erro no upload") {
+    try {
+      const response = UrlFetchApp.fetch(assinaturaURL);
+      const blob = response.getBlob();
+      body.appendParagraph("Assinatura:");
+      body.appendImage(blob);
+    } catch (e) {
+      body.appendParagraph("⚠ Erro ao carregar assinatura.");
+    }
+  }
+
+  doc.saveAndClose();
+  const pdf = DriveApp.getFileById(doc.getId()).getAs("application/pdf");
+  const folder = DriveApp.getFolderById(folderId);
+  const pdfFile = folder.createFile(pdf);
+
+  return pdfFile.getUrl();
+}
