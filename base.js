@@ -18,12 +18,24 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.getContext('2d').scale(ratio, ratio);
     signaturePad.clear();
   }
+// Valida RG (simples)
+  function validarRG(rg) {
+    rg = rg.replace(/[^\dA-Za-z]+/g, '');
+    return rg.length >= 5 && rg.length <= 14;
+  }
+
 
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const rg = form.querySelector('[name="RG"]').value;
+    if (!validarRG(rg)) {
+      alert("RG inválido!");
+      return;
+    }
 
     if (signaturePad.isEmpty()) {
       alert("Por favor, forneça sua assinatura digital.");
@@ -50,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbyump7dQ8IeZlzgyLoKbd2OLKbfpx3kgTuz8OlAzBhWwivHgWhuRj_vVh1YQtEmv2uSaA/exec", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbxakNmPwLOkkMjBcOLRKwm9RJhmE2drfk7Wtj00EzvZ4MlC2Q-evvkCxxpMwxeJSi9IpQ/exec", {
         method: "POST",
         body: JSON.stringify(data)
       });
@@ -72,4 +84,5 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.onerror = error => reject(error);
     });
   }
+
 });
