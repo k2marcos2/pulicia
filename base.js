@@ -31,14 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const rg = form.querySelector('[name="RG"]').value;
-    if (!validarRG(rg)) {
-      alert("RG inválido!");
-      return;
-    }
+    const submitButton = document.getElementById('submit-btn');
+    submitButton.disabled = true;
+    submitButton.textContent = "Enviando...";
 
     if (signaturePad.isEmpty()) {
       alert("Por favor, forneça sua assinatura digital.");
+      submitButton.disabled = false;
+      submitButton.textContent = "Enviar";
       return;
     }
 
@@ -62,17 +62,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbxakNmPwLOkkMjBcOLRKwm9RJhmE2drfk7Wtj00EzvZ4MlC2Q-evvkCxxpMwxeJSi9IpQ/exec", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbwxycTeVx7mttDD71cDtXCk6HRC_dJbi68pARYydS5vbRe68FWwUoGEQfqCnTzMatF8tg/exec", {
         method: "POST",
         body: JSON.stringify(data)
       });
 
-      alert("Formulário enviado com sucesso!");
-      form.reset();
-      signaturePad.clear();
+      // Pegando a resposta como JSON (que deve retornar o link do PDF)
+      const result = await response.json();
+
+      if (result.status === "success" && result.pdf) {
+        // Abre o PDF numa nova aba para o usuário visualizar e baixar
+        window.open(result.pdf, "_blank");
+        
+        alert("Formulário enviado com sucesso! PDF aberto para download.");
+        
+        form.reset();
+        signaturePad.clear();
+      } else {
+        alert("Erro ao gerar PDF: " + (result.message || "Erro desconhecido"));
+      }
+
     } catch (err) {
       console.error("Erro ao enviar:", err);
       alert("Erro ao enviar o formulário.");
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = "Enviar";
     }
   });
 
