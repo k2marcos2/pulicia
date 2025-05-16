@@ -42,6 +42,8 @@ function doPost(e) {
     const novaLinha = [
       new Date().toLocaleString("pt-BR"),
       data.Motorista || "",
+      data.PostoGraduacao || "",
+      data.RG || "",
       data.DataCautela || "",
       data.HoraCautela || "",
       data.ValidadeCNH || "",
@@ -70,8 +72,13 @@ function doPost(e) {
     sheet.appendRow(novaLinha);
 
     return ContentService.createTextOutput(
-      JSON.stringify({ status: "success", message: "Enviado com sucesso!" })
+      JSON.stringify({
+        status: "success",
+        message: "Formulário enviado com sucesso!",
+        pdf: pdfURL
+      })
     ).setMimeType(ContentService.MimeType.JSON);
+
   } catch (err) {
     return ContentService.createTextOutput(
       JSON.stringify({ status: "error", message: err.toString() })
@@ -91,6 +98,8 @@ function criarPDF(data, assinaturaURL, midiaLinks, folderId) {
 
   const campos = [
     ["Motorista", data.Motorista],
+    ["Posto/Graduação", data.PostoGraduacao],
+    ["RG", data.RG],
     ["Data da Cautela", data.DataCautela],
     ["Hora da Cautela", data.HoraCautela],
     ["Validade CNH", data.ValidadeCNH],
