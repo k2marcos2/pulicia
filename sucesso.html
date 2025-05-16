@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Gerado</title>
+    <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+  <h2>Formulário enviado com sucesso!</h2>
+  <p>Seu PDF está pronto para download:</p>
+  <a id="pdf-link" href="#" target="_blank" download>
+    <button>Baixar PDF</button>
+  </a>
+
+  <script>
+    const pdfUrl = sessionStorage.getItem("pdfUrl");
+    if (pdfUrl) {
+      document.getElementById("pdf-link").href = pdfUrl;
+    } else {
+      document.getElementById("pdf-link").innerText = "PDF não disponível.";
+    }
+  </script>
+</body>
+</html>

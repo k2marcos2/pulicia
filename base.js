@@ -62,22 +62,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbwxycTeVx7mttDD71cDtXCk6HRC_dJbi68pARYydS5vbRe68FWwUoGEQfqCnTzMatF8tg/exec", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbw4LAh4N2tPYTaqFJYsxVfRNVIuLwXrRbBRfL-In5rRP4gypvsaGqJQsh_-SrXhxtX1bQ/exec", {
         method: "POST",
         body: JSON.stringify(data)
       });
 
-      // Pegando a resposta como JSON (que deve retornar o link do PDF)
       const result = await response.json();
-
       if (result.status === "success" && result.pdf) {
-        // Abre o PDF numa nova aba para o usuário visualizar e baixar
-        window.open(result.pdf, "_blank");
-        
-        alert("Formulário enviado com sucesso! PDF aberto para download.");
-        
+        sessionStorage.setItem("pdfUrl", result.pdf);
         form.reset();
         signaturePad.clear();
+        window.location.href = "sucesso.html";
       } else {
         alert("Erro ao gerar PDF: " + (result.message || "Erro desconhecido"));
       }

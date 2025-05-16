@@ -76,3 +76,15 @@ small {
 #clear-signature:hover {
   background-color: #d32f2f;
 }
+.btn-download {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #004AAD;
+  color: #fff;
+  border-radius: 5px;
+  text-decoration: none;
+}
+
+.btn-download:hover {
+  background-color: #003080;
+}
