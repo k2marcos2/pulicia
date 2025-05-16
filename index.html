@@ -28,11 +28,35 @@
     <label>Validade da CNH*</label>
     <input type="date" name="ValidadeCNH" required>
 
-    <label>Categoria da CNH</label>
-    <input type="text" name="CategoriaCNH">
+    <label>Categoria da CNH*</label>
+    <select name="CategoriaCNH" required>
+      <option value="">Selecione...</option>
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="AB">AB</option>
+      <option value="C">C</option>
+      <option value="AC">AC</option>
+      <option value="D">D</option>
+      <option value="AD">AD</option>
+      <option value="E">E</option>
+      <option value="AE">AE</option>
+    </select>
 
     <label>1. Veículo*</label>
-    <input type="text" name="Veiculo" required>
+    <select name="Veiculo" required>
+      <option value="">Selecione...</option>
+      <option value="Duster">Duster</option>
+      <option value="Gol">Gol</option>
+      <option value="Polo">Polo</option>
+      <option value="L200 Triton">L200 Triton</option>
+      <option value="Ranger">Ranger</option>
+      <option value="XRE 300">XRE 300</option>
+      <option value="VAN">VAN</option>
+      <option value="Micro-onibus">Micro-onibus</option>
+      <option value="Yaris">Yaris</option>
+      <option value="Quadriciclo">Quadriciclo</option>
+      <option value="Corolla">Corolla</option>
+    </select>
 
     <label>2. Prefixo*</label>
     <input type="text" name="Prefixo" required>
