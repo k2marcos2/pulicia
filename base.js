@@ -4,6 +4,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('signature-pad');
   const signaturePad = new SignaturePad(canvas);
   const clearButton = document.getElementById('clear-signature');
+  const video = document.getElementById('camera');
+  const captureBtn = document.getElementById('capture');
+  const previewsContainer = document.getElementById('previews');
+
+  let fotosCapturadas = [];
+
+  // Inicializa a câmera
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+    .then(stream => {
+      video.srcObject = stream;
+    })
+    .catch(err => {
+      console.error("Erro ao acessar câmera: ", err);
+      alert("Não foi possível acessar a câmera.");
+    });
+
+  // Captura a imagem da câmera
+  captureBtn.addEventListener('click', () => {
+    const canvasFoto = document.createElement('canvas');
+    canvasFoto.width = video.videoWidth;
+    canvasFoto.height = video.videoHeight;
+    canvasFoto.getContext('2d').drawImage(video, 0, 0);
+    canvasFoto.toBlob(blob => {
+      fotosCapturadas.push(blob);
+
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(blob);
+      img.style.maxWidth = "100px";
+      img.style.border = "1px solid #ccc";
+      img.style.borderRadius = "6px";
+      previewsContainer.appendChild(img);
+    }, 'image/jpeg');
+  });
 
   clearButton.addEventListener('click', () => {
     signaturePad.clear();
@@ -35,18 +68,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const formData = new FormData(form);
-
-    // Coloca a assinatura em base64 no formData (campo oculto)
     formData.set('AssinaturaBase64', signaturePad.toDataURL('image/png'));
 
-    // Limpa os arquivos antigos e adiciona todos arquivos do input "midia"
-    formData.delete('midia');
+    // Adiciona fotos tiradas com a câmera
+    fotosCapturadas.forEach((blob, index) => {
+      formData.append('midia', blob, `foto_camera_${index + 1}.jpg`);
+    });
+
+    // Adiciona arquivos da galeria
     for (const file of midiaInput.files) {
       formData.append('midia', file);
     }
 
     try {
-      const response = await fetch("", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbwJ8OeJ6dzES0RTw2-IUVMxrvbdc5IxLgD49-ueBWYd4iIg3gpoJW8ex8Xnf9R7cz76cQ/exec", {
         method: "POST",
         body: formData
       });
@@ -57,6 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem("pdfUrl", result.pdf);
         form.reset();
         signaturePad.clear();
+        previewsContainer.innerHTML = "";
+        fotosCapturadas = [];
         window.location.href = "sucesso.html";
       } else {
         alert("Erro ao gerar PDF: " + (result.message || "Erro desconhecido"));

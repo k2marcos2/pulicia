@@ -140,9 +140,20 @@
     <label>13. Outros Problemas - Descrever</label>
     <textarea name="OutrosProblemas" rows="4"></textarea>
 
-    <label>Fotos e Vídeos da Viatura</label>
-    <input type="file" id="midia" name="midia" accept="image/*" capture="environment" multiple>
-    <small>Clique para tirar uma foto ou escolher da galeria</small>
+    <label>Fotos da Viatura</label>
+    <div id="camera-container">
+      <video id="camera" autoplay playsinline style="max-width: 100%; border-radius: 8px;"></video>
+      <br>
+      <button type="button" id="capture">📷 Tirar Foto</button>
+    </div>
+
+    <div id="preview-container" style="margin-top: 10px;">
+      <h4>Fotos capturadas:</h4>
+      <div id="previews" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+    </div>
+
+    <label>Selecionar fotos ou vídeos da galeria</label>
+    <input type="file" id="midia" name="midia" accept="image/*,video/*" multiple>
 
     <label>Assinatura:</label>
     <canvas id="signature-pad" width="300" height="150" style="border:1px solid #000;"></canvas>
