@@ -141,7 +141,8 @@
     <textarea name="OutrosProblemas" rows="4"></textarea>
 
     <label>Fotos e Vídeos da Viatura</label>
-    <input type="file" id="midia" name="midia" accept="image/*,video/*" multiple>
+    <input type="file" id="midia" name="midia" accept="image/*,video/*" capture="environment" multiple>
+    <small>Clique para tirar uma foto ou escolher da galeria</small>
 
     <label>Assinatura:</label>
     <canvas id="signature-pad" width="300" height="150" style="border:1px solid #000;"></canvas>
