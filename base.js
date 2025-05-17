@@ -70,18 +70,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const formData = new FormData(form);
     formData.set('AssinaturaBase64', signaturePad.toDataURL('image/png'));
 
-    // Adiciona fotos tiradas com a câmera
-    fotosCapturadas.forEach((blob, index) => {
-      formData.append('midia', blob, `foto_camera_${index + 1}.jpg`);
+    // Converte as fotos da câmera para base64
+    const fotosBase64 = await Promise.all(fotosCapturadas.map(blob => {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    }));
+    fotosBase64.forEach((base64, i) => {
+      formData.append(`MidiaBase64_${i}`, base64);
     });
 
-    // Adiciona arquivos da galeria
-    for (const file of midiaInput.files) {
-      formData.append('midia', file);
+    // Converte imagens da galeria para base64
+    const galeriaFiles = Array.from(midiaInput.files);
+    for (let i = 0; i < galeriaFiles.length; i++) {
+      const file = galeriaFiles[i];
+      const base64 = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+      formData.append(`MidiaBase64_${fotosBase64.length + i}`, base64);
     }
 
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbwJ8OeJ6dzES0RTw2-IUVMxrvbdc5IxLgD49-ueBWYd4iIg3gpoJW8ex8Xnf9R7cz76cQ/exec", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbxthGS1eRMWqTiOtSA7-njD73hVGpdiXieNHFSrAkcg50tLmwhHV3ByRt29iET4BtkMDQ/exec", {
         method: "POST",
         body: formData
       });
