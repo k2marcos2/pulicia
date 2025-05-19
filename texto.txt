@@ -1,5 +1,4 @@
 code do code.gs
-
 function doPost(e) {
   try {
     const SPREADSHEET_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
@@ -7,84 +6,93 @@ function doPost(e) {
     const DRIVE_FOLDER_ID = "1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w";
 
     const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
-    const data = JSON.parse(e.postData.contents);
+    const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+    const params = e.parameter;
 
+    // Salvar imagens base64 no Drive
     let midiaLinks = [];
-    if (data.Midias && Array.isArray(data.Midias)) {
-      const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-      for (let item of data.Midias) {
-        try {
-          const blob = Utilities.newBlob(Utilities.base64Decode(item.base64), item.tipo, item.nome);
-          const file = folder.createFile(blob);
-          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-          midiaLinks.push(getDirectDownloadLink(file));
-        } catch (e) {
-          midiaLinks.push("Erro em " + item.nome);
-        }
+    for (let key in params) {
+      if (key.startsWith("MidiaBase64_")) {
+        const base64 = params[key].split(',')[1];
+        const blob = Utilities.newBlob(Utilities.base64Decode(base64), "image/jpeg", `foto_${Date.now()}.jpg`);
+        const file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        midiaLinks.push(getDirectDownloadLink(file));
       }
     }
 
+    // Salvar assinatura
     let assinaturaURL = "Sem assinatura";
-    if (data.AssinaturaBase64) {
-      const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-      const blob = Utilities.newBlob(
-        Utilities.base64Decode(data.AssinaturaBase64.split(',')[1]),
-        "image/png",
-        `assinatura_${data.Motorista}_${Date.now()}.png`
-      );
+    if (params.AssinaturaBase64) {
+      const base64Data = params.AssinaturaBase64.split(',')[1];
+      const blob = Utilities.newBlob(Utilities.base64Decode(base64Data), "image/png", `assinatura_${params.Motorista || "desconhecido"}_${Date.now()}.png`);
       const file = folder.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       assinaturaURL = getDirectDownloadLink(file);
     }
 
-    const pdfURL = criarPDF(data, assinaturaURL, midiaLinks, DRIVE_FOLDER_ID);
+    // Gerar PDF
+    const pdfURL = criarPDF(params, assinaturaURL, midiaLinks, DRIVE_FOLDER_ID);
 
+   // Criar os links como texto simples
+    const midiasTexto = midiaLinks.join(" | ");
+    const assinaturaTexto = assinaturaURL !== "Sem assinatura" ? assinaturaURL : "Sem assinatura";
+    const pdfTexto = pdfURL || "";
+
+    // Inserir linha na planilha com links como texto normal
     const novaLinha = [
-      new Date().toLocaleString("pt-BR"),
-      data.Motorista || "",
-      data.PostoGraduacao || "",
-      data.RG || "",
-      data.DataCautela || "",
-      data.HoraCautela || "",
-      data.ValidadeCNH || "",
-      data.CategoriaCNH || "",
-      data.Veiculo || "",
-      data.Prefixo || "",
-      data.Placa || "",
-      data.KmAtual || "",
-      data.KmProxRevisao || "",
-      data.NivelAgua || "",
-      data.NivelOleo || "",
-      data.NivelCombustivel || "",
-      data.Pneus || "",
-      data.GiroflexSirene || "",
-      data.LampadasQueimadas || "",
-      data.Parabrisa || "",
-      data.Radio || "",
-      data.EquipamentosObrigatorios || "",
-      data.QtdCones || "",
-      data.OutrosProblemas || "",
-      midiaLinks.join(" | "),
-      assinaturaURL,
-      pdfURL
+      new Date(),
+      params.Motorista || "",
+      params.PostoGraduacao || "",
+      params.RG || "",
+      params.DataCautela || "",
+      params.HoraCautela || "",
+      params.ValidadeCNH || "",
+      params.CategoriaCNH || "",
+      params.Veiculo || "",
+      params.Prefixo || "",
+      params.Placa || "",
+      params.KmAtual || "",
+      params.KmProxRevisao || "",
+      params.NivelAgua || "",
+      params.NivelOleo || "",
+      params.NivelCombustivel || "",
+      params.Pneus || "",
+      params.GiroflexSirene || "",
+      params.LampadasQueimadas || "",
+      params.Parabrisa || "",
+      params.Radio || "",
+      params.EquipamentosObrigatorios || "",
+      params.QtdCones || "",
+      params.OutrosProblemas || "",
+      midiasTexto,
+      assinaturaTexto,
+      pdfTexto
     ];
 
     sheet.appendRow(novaLinha);
 
-    return ContentService.createTextOutput(
-      JSON.stringify({
-        status: "success",
-        message: "Formulário enviado com sucesso!",
-        pdf: pdfURL
-      })
-    ).setMimeType(ContentService.MimeType.JSON);
+
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      message: "Formulário enviado com sucesso!",
+      pdf: pdfURL
+    })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
-    return ContentService.createTextOutput(
-      JSON.stringify({ status: "error", message: err.toString() })
-    ).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
   }
 }
+
+// Função para link direto do Drive
+function getDirectDownloadLink(file) {
+  return "https://drive.google.com/uc?export=download&id=" + file.getId();
+}
+
 
 
 code do PDF.gs
@@ -95,6 +103,7 @@ function criarPDF(data, assinaturaURL, midiaLinks, folderId) {
 
   body.appendParagraph("CHECKLIST DE CAUTELA DE VIATURA").setHeading(DocumentApp.ParagraphHeading.HEADING1);
   body.appendParagraph(`Data de envio: ${new Date().toLocaleString("pt-BR")}`);
+  body.appendParagraph("");
 
   const campos = [
     ["Motorista", data.Motorista],
@@ -119,25 +128,37 @@ function criarPDF(data, assinaturaURL, midiaLinks, folderId) {
     ["Rádio", data.Radio],
     ["Equipamentos Obrigatórios", data.EquipamentosObrigatorios],
     ["Quantidade de Cones", data.QtdCones],
-    ["Outros Problemas", data.OutrosProblemas],
-    ["Mídias (links)", midiaLinks.join(" | ")]
+    ["Outros Problemas", data.OutrosProblemas]
   ];
 
   campos.forEach(([titulo, valor]) => {
     body.appendParagraph(`${titulo}: ${valor || "Não informado"}`);
   });
 
-  if (assinaturaURL && assinaturaURL !== "Sem assinatura" && assinaturaURL !== "Erro no upload") {
+  // Adicionar links das mídias
+  if (midiaLinks.length > 0) {
+    body.appendParagraph("");
+    body.appendParagraph("Mídias:");
+    midiaLinks.forEach((link, index) => {
+      body.appendParagraph(`Mídia ${index + 1}: ${link}`);
+    });
+  }
+
+  // Inserir assinatura como imagem
+  if (assinaturaURL && assinaturaURL !== "Sem assinatura") {
     try {
       const blob = UrlFetchApp.fetch(assinaturaURL).getBlob();
+      body.appendParagraph("");
       body.appendParagraph("Assinatura:");
       body.appendImage(blob);
     } catch (e) {
-      body.appendParagraph("⚠ Erro ao carregar assinatura.");
+      body.appendParagraph("⚠ Erro ao carregar imagem da assinatura.");
     }
   }
 
   doc.saveAndClose();
+
+  // Gerar PDF e salvar na pasta
   const pdf = DriveApp.getFileById(doc.getId()).getAs("application/pdf");
   const folder = DriveApp.getFolderById(folderId);
   const pdfFile = folder.createFile(pdf);
@@ -146,6 +167,7 @@ function criarPDF(data, assinaturaURL, midiaLinks, folderId) {
   return getDirectDownloadLink(pdfFile);
 }
 
+// Função de link direto
 function getDirectDownloadLink(file) {
-  return `https://drive.google.com/uc?export=view&id=${file.getId()}`;
+  return "https://drive.google.com/uc?export=download&id=" + file.getId();
 }
