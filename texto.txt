@@ -82,95 +82,87 @@ function getDirectDownloadLink(file) {
   return "https://drive.google.com/uc?export=download&id=" + file.getId();
 }
 
+
 code do PDF.gs
 
 function gerarChecklistPDF(data, assinaturaURL, midiaLinks) {
-  const folderId = '1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w';  // 👉 coloque aqui o ID da pasta onde salva os PDFs
-  const templateId = '1FoRErwkfgz1otLS1PGwRoFpAWC_qth3V2vNmDP9_ge4'; // 👉 coloque aqui o ID do arquivo de slide modelo
+  const folderId = '1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w';
+  const templateId = '1FoRErwkfgz1otLS1PGwRoFpAWC_qth3V2vNmDP9_ge4';
 
-  // Cria uma cópia do template no Drive
   const copy = DriveApp.getFileById(templateId).makeCopy(`Checklist - ${data.Motorista}`, DriveApp.getFolderById(folderId));
   const presentation = SlidesApp.openById(copy.getId());
-  const slide = presentation.getSlides()[0];
+  let slide = presentation.getSlides()[0];
 
-  let y = 20;
   const margin = 30;
   const larguraCaixa = 540;
+  const maxY = 750;
+  let y = 30;
 
-  slide.insertTextBox("CHECKLIST DE CAUTELA DE VIATURAS", margin, y, larguraCaixa, 30)
-       .getText().getTextStyle().setBold(true).setFontSize(20);
-  y += 40;
-
-  slide.insertTextBox("DADOS DO MOTORISTA", margin, y, larguraCaixa, 20)
-       .getText().getTextStyle().setBold(true);
-  y += 25;
-
-  const dadosPrincipais = [
-    `Motorista: ${data.Motorista}`,
-    `Posto/Graduação: ${data.PostoGraduacao}`,
-    `RG: ${data.RG}`,
-    `Data Cautela: ${data.DataCautela}`,
-    `Hora: ${data.HoraCautela}`,
-    `Validade CNH: ${data.ValidadeCNH}`,
-    `Categoria CNH: ${data.CategoriaCNH}`,
-    `Veículo: ${data.Veiculo}`,
-    `Prefixo: ${data.Prefixo}`,
-    `Placa: ${data.Placa}`,
-    `Km Atual: ${data.KmAtual}`,
-    `Km Próx. Revisão: ${data.KmProxRevisao}`
-  ];
-
-  dadosPrincipais.forEach(item => {
-    slide.insertTextBox(item, margin, y, larguraCaixa, 20);
-    y += 22;
-  });
-
-  y += 20;
-
-  slide.insertTextBox("CHECKLIST DE VERIFICAÇÃO", margin, y, larguraCaixa, 20)
-       .getText().getTextStyle().setBold(true);
-  y += 25;
-
-  const checklistTecnico = [
-    `Nível de Água: ${data.NivelAgua}`,
-    `Nível de Óleo: ${data.NivelOleo}`,
-    `Combustível: ${data.NivelCombustivel}`,
-    `Pneus: ${data.Pneus}`,
-    `Giroflex/Sirene: ${data.GiroflexSirene}`,
-    `Lâmpadas Queimadas: ${data.LampadasQueimadas}`,
-    `Parabrisa: ${data.Parabrisa}`,
-    `Rádio: ${data.Radio}`
-  ];
-
-  checklistTecnico.forEach(item => {
-    slide.insertTextBox(item, margin, y, larguraCaixa, 20);
-    y += 22;
-  });
-
-  y += 20;
-
-  slide.insertTextBox("EQUIPAMENTOS E OBSERVAÇÕES", margin, y, larguraCaixa, 20)
-       .getText().getTextStyle().setBold(true);
-  y += 25;
-
-  slide.insertTextBox(`Equipamentos Obrigatórios: ${data.EquipamentosObrigatorios}`, margin, y, larguraCaixa, 40);
-  y += 45;
-  slide.insertTextBox(`Qtd Cones: ${data.QtdCones}`, margin, y, larguraCaixa, 20);
-  y += 25;
-  slide.insertTextBox(`Outros Problemas: ${data.OutrosProblemas}`, margin, y, larguraCaixa, 40);
-  y += 45;
-
-  if (midiaLinks.length > 0) {
-    slide.insertTextBox("MÍDIAS", margin, y, larguraCaixa, 20)
-         .getText().getTextStyle().setBold(true);
+  function adicionarBloco(titulo, conteudo) {
+    if (y + 40 > maxY) {
+      slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
+      y = 30;
+    }
+    const tituloShape = slide.insertTextBox(titulo, margin, y, larguraCaixa, 20);
+    tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
     y += 25;
-    slide.insertTextBox(`${midiaLinks.join(" | ")}`, margin, y, larguraCaixa, 40);
-    y += 50;
+
+    const conteudoShape = slide.insertTextBox(conteudo, margin, y, larguraCaixa, 400);
+    y += conteudoShape.getHeight() + 10;
   }
 
+  // Bloco 1 — Título
+  const tituloShape = slide.insertTextBox("CHECKLIST DE CAUTELA DE VIATURAS", margin, y, larguraCaixa, 30);
+  tituloShape.getText().getTextStyle().setBold(true).setFontSize(22);
+  y += 40;
+
+  // Dados do motorista
+  const dadosMotorista = `
+Motorista: ${data.Motorista}
+Posto/Graduação: ${data.PostoGraduacao}
+RG: ${data.RG}
+Data Cautela: ${data.DataCautela}
+Hora: ${data.HoraCautela}
+Validade CNH: ${data.ValidadeCNH}
+Categoria CNH: ${data.CategoriaCNH}
+Veículo: ${data.Veiculo}
+Prefixo: ${data.Prefixo}
+Placa: ${data.Placa}
+Km Atual: ${data.KmAtual}
+Km Próx. Revisão: ${data.KmProxRevisao}
+`;
+  adicionarBloco("DADOS DO MOTORISTA", dadosMotorista);
+
+  // Checklist técnico
+  const checklistTecnico = `
+Nível de Água: ${data.NivelAgua}
+Nível de Óleo: ${data.NivelOleo}
+Combustível: ${data.NivelCombustivel}
+Pneus: ${data.Pneus}
+Giroflex/Sirene: ${data.GiroflexSirene}
+Lâmpadas Queimadas: ${data.LampadasQueimadas}
+Parabrisa: ${data.Parabrisa}
+Rádio: ${data.Radio}
+Equipamentos Obrigatórios: ${data.EquipamentosObrigatorios}
+Qtd Cones: ${data.QtdCones}
+Outros Problemas: ${data.OutrosProblemas}
+`;
+  adicionarBloco("CHECKLIST DE VERIFICAÇÃO", checklistTecnico);
+
+  // Mídias (se tiver)
+  if (midiaLinks.length > 0) {
+    const midiasTexto = midiaLinks.join("\n");
+    adicionarBloco("MÍDIAS", midiasTexto);
+  }
+
+  // Assinatura (se tiver)
   if (assinaturaURL && assinaturaURL !== "Sem assinatura") {
-    slide.insertTextBox("ASSINATURA", margin, y, larguraCaixa, 20)
-         .getText().getTextStyle().setBold(true);
+    if (y + 80 > maxY) {
+      slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
+      y = 30;
+    }
+    const tituloShape = slide.insertTextBox("ASSINATURA", margin, y, larguraCaixa, 20);
+    tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
     y += 25;
     const blob = UrlFetchApp.fetch(assinaturaURL).getBlob();
     slide.insertImage(blob, margin, y, 200, 60);
@@ -186,3 +178,4 @@ function gerarChecklistPDF(data, assinaturaURL, midiaLinks) {
 
   return "https://drive.google.com/uc?export=download&id=" + pdfFile.getId();
 }
+
