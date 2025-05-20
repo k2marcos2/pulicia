@@ -1,4 +1,3 @@
-code do code.gs
 function doPost(e) {
   try {
     const SPREADSHEET_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
@@ -9,7 +8,8 @@ function doPost(e) {
     const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
     const params = e.parameter;
 
-    // Salvar imagens base64 no Drive
+    Logger.log(JSON.stringify(params));
+
     let midiaLinks = [];
     for (let key in params) {
       if (key.startsWith("MidiaBase64_")) {
@@ -21,25 +21,17 @@ function doPost(e) {
       }
     }
 
-    // Salvar assinatura
     let assinaturaURL = "Sem assinatura";
     if (params.AssinaturaBase64) {
       const base64Data = params.AssinaturaBase64.split(',')[1];
-      const blob = Utilities.newBlob(Utilities.base64Decode(base64Data), "image/png", `assinatura_${params.Motorista || "desconhecido"}_${Date.now()}.png`);
+      const blob = Utilities.newBlob(Utilities.base64Decode(base64Data), "image/png", `assinatura_${params.Motorista}_${Date.now()}.png`);
       const file = folder.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       assinaturaURL = getDirectDownloadLink(file);
     }
 
-    // Gerar PDF
-    const pdfURL = criarPDF(params, assinaturaURL, midiaLinks, DRIVE_FOLDER_ID);
+    const pdfURL = gerarChecklistPDF(params, assinaturaURL, midiaLinks);
 
-   // Criar os links como texto simples
-    const midiasTexto = midiaLinks.join(" | ");
-    const assinaturaTexto = assinaturaURL !== "Sem assinatura" ? assinaturaURL : "Sem assinatura";
-    const pdfTexto = pdfURL || "";
-
-    // Inserir linha na planilha com links como texto normal
     const novaLinha = [
       new Date(),
       params.Motorista || "",
@@ -65,18 +57,16 @@ function doPost(e) {
       params.EquipamentosObrigatorios || "",
       params.QtdCones || "",
       params.OutrosProblemas || "",
-      midiasTexto,
-      assinaturaTexto,
-      pdfTexto
+      midiaLinks.join(" | "),
+      assinaturaURL,
+      pdfURL
     ];
 
     sheet.appendRow(novaLinha);
 
-
-
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",
-      message: "Formulário enviado com sucesso!",
+      message: "Checklist enviado e PDF gerado!",
       pdf: pdfURL
     })).setMimeType(ContentService.MimeType.JSON);
 
@@ -88,86 +78,111 @@ function doPost(e) {
   }
 }
 
-// Função para link direto do Drive
 function getDirectDownloadLink(file) {
   return "https://drive.google.com/uc?export=download&id=" + file.getId();
 }
 
-
-
 code do PDF.gs
 
-function criarPDF(data, assinaturaURL, midiaLinks, folderId) {
-  const doc = DocumentApp.create(`Cautela - ${data.Motorista || 'Motorista'}`);
-  const body = doc.getBody();
+function gerarChecklistPDF(data, assinaturaURL, midiaLinks) {
+  const folderId = '1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w';  // 👉 coloque aqui o ID da pasta onde salva os PDFs
+  const templateId = '1FoRErwkfgz1otLS1PGwRoFpAWC_qth3V2vNmDP9_ge4'; // 👉 coloque aqui o ID do arquivo de slide modelo
 
-  body.appendParagraph("CHECKLIST DE CAUTELA DE VIATURA").setHeading(DocumentApp.ParagraphHeading.HEADING1);
-  body.appendParagraph(`Data de envio: ${new Date().toLocaleString("pt-BR")}`);
-  body.appendParagraph("");
+  // Cria uma cópia do template no Drive
+  const copy = DriveApp.getFileById(templateId).makeCopy(`Checklist - ${data.Motorista}`, DriveApp.getFolderById(folderId));
+  const presentation = SlidesApp.openById(copy.getId());
+  const slide = presentation.getSlides()[0];
 
-  const campos = [
-    ["Motorista", data.Motorista],
-    ["Posto/Graduação", data.PostoGraduacao],
-    ["RG", data.RG],
-    ["Data da Cautela", data.DataCautela],
-    ["Hora da Cautela", data.HoraCautela],
-    ["Validade CNH", data.ValidadeCNH],
-    ["Categoria CNH", data.CategoriaCNH],
-    ["Veículo", data.Veiculo],
-    ["Prefixo", data.Prefixo],
-    ["Placa", data.Placa],
-    ["Km Atual", data.KmAtual],
-    ["Km Próxima Revisão", data.KmProxRevisao],
-    ["Nível de Água", data.NivelAgua],
-    ["Óleo do Motor", data.NivelOleo],
-    ["Combustível", data.NivelCombustivel],
-    ["Pneus", data.Pneus],
-    ["Giroflex/Sirene", data.GiroflexSirene],
-    ["Lâmpadas Queimadas", data.LampadasQueimadas],
-    ["Parabrisa", data.Parabrisa],
-    ["Rádio", data.Radio],
-    ["Equipamentos Obrigatórios", data.EquipamentosObrigatorios],
-    ["Quantidade de Cones", data.QtdCones],
-    ["Outros Problemas", data.OutrosProblemas]
+  let y = 20;
+  const margin = 30;
+  const larguraCaixa = 540;
+
+  slide.insertTextBox("CHECKLIST DE CAUTELA DE VIATURAS", margin, y, larguraCaixa, 30)
+       .getText().getTextStyle().setBold(true).setFontSize(20);
+  y += 40;
+
+  slide.insertTextBox("DADOS DO MOTORISTA", margin, y, larguraCaixa, 20)
+       .getText().getTextStyle().setBold(true);
+  y += 25;
+
+  const dadosPrincipais = [
+    `Motorista: ${data.Motorista}`,
+    `Posto/Graduação: ${data.PostoGraduacao}`,
+    `RG: ${data.RG}`,
+    `Data Cautela: ${data.DataCautela}`,
+    `Hora: ${data.HoraCautela}`,
+    `Validade CNH: ${data.ValidadeCNH}`,
+    `Categoria CNH: ${data.CategoriaCNH}`,
+    `Veículo: ${data.Veiculo}`,
+    `Prefixo: ${data.Prefixo}`,
+    `Placa: ${data.Placa}`,
+    `Km Atual: ${data.KmAtual}`,
+    `Km Próx. Revisão: ${data.KmProxRevisao}`
   ];
 
-  campos.forEach(([titulo, valor]) => {
-    body.appendParagraph(`${titulo}: ${valor || "Não informado"}`);
+  dadosPrincipais.forEach(item => {
+    slide.insertTextBox(item, margin, y, larguraCaixa, 20);
+    y += 22;
   });
 
-  // Adicionar links das mídias
+  y += 20;
+
+  slide.insertTextBox("CHECKLIST DE VERIFICAÇÃO", margin, y, larguraCaixa, 20)
+       .getText().getTextStyle().setBold(true);
+  y += 25;
+
+  const checklistTecnico = [
+    `Nível de Água: ${data.NivelAgua}`,
+    `Nível de Óleo: ${data.NivelOleo}`,
+    `Combustível: ${data.NivelCombustivel}`,
+    `Pneus: ${data.Pneus}`,
+    `Giroflex/Sirene: ${data.GiroflexSirene}`,
+    `Lâmpadas Queimadas: ${data.LampadasQueimadas}`,
+    `Parabrisa: ${data.Parabrisa}`,
+    `Rádio: ${data.Radio}`
+  ];
+
+  checklistTecnico.forEach(item => {
+    slide.insertTextBox(item, margin, y, larguraCaixa, 20);
+    y += 22;
+  });
+
+  y += 20;
+
+  slide.insertTextBox("EQUIPAMENTOS E OBSERVAÇÕES", margin, y, larguraCaixa, 20)
+       .getText().getTextStyle().setBold(true);
+  y += 25;
+
+  slide.insertTextBox(`Equipamentos Obrigatórios: ${data.EquipamentosObrigatorios}`, margin, y, larguraCaixa, 40);
+  y += 45;
+  slide.insertTextBox(`Qtd Cones: ${data.QtdCones}`, margin, y, larguraCaixa, 20);
+  y += 25;
+  slide.insertTextBox(`Outros Problemas: ${data.OutrosProblemas}`, margin, y, larguraCaixa, 40);
+  y += 45;
+
   if (midiaLinks.length > 0) {
-    body.appendParagraph("");
-    body.appendParagraph("Mídias:");
-    midiaLinks.forEach((link, index) => {
-      body.appendParagraph(`Mídia ${index + 1}: ${link}`);
-    });
+    slide.insertTextBox("MÍDIAS", margin, y, larguraCaixa, 20)
+         .getText().getTextStyle().setBold(true);
+    y += 25;
+    slide.insertTextBox(`${midiaLinks.join(" | ")}`, margin, y, larguraCaixa, 40);
+    y += 50;
   }
 
-  // Inserir assinatura como imagem
   if (assinaturaURL && assinaturaURL !== "Sem assinatura") {
-    try {
-      const blob = UrlFetchApp.fetch(assinaturaURL).getBlob();
-      body.appendParagraph("");
-      body.appendParagraph("Assinatura:");
-      body.appendImage(blob);
-    } catch (e) {
-      body.appendParagraph("⚠ Erro ao carregar imagem da assinatura.");
-    }
+    slide.insertTextBox("ASSINATURA", margin, y, larguraCaixa, 20)
+         .getText().getTextStyle().setBold(true);
+    y += 25;
+    const blob = UrlFetchApp.fetch(assinaturaURL).getBlob();
+    slide.insertImage(blob, margin, y, 200, 60);
+    y += 70;
   }
 
-  doc.saveAndClose();
+  presentation.saveAndClose();
 
-  // Gerar PDF e salvar na pasta
-  const pdf = DriveApp.getFileById(doc.getId()).getAs("application/pdf");
+  const pdf = DriveApp.getFileById(presentation.getId()).getAs("application/pdf");
   const folder = DriveApp.getFolderById(folderId);
   const pdfFile = folder.createFile(pdf);
   pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-  return getDirectDownloadLink(pdfFile);
-}
-
-// Função de link direto
-function getDirectDownloadLink(file) {
-  return "https://drive.google.com/uc?export=download&id=" + file.getId();
+  return "https://drive.google.com/uc?export=download&id=" + pdfFile.getId();
 }
