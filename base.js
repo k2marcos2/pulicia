@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch("https://script.google.com/macros/s/AKfycbyl52LVDQEVZCa3_AqUXfu0yxlmDfSl2bApmMWpHURr3tMLrdRGby61efzTWk-RwnrpRA/exec", {
+            const response = await fetch("https://script.google.com/macros/s/AKfycbzt6GdJ7DgvtD3vI3FimGDilfhPENWF1hK8La7zbHkqLNpq5VTkJDe_fZF9kK7rm9j9/exec", {
                 method: "POST",
                 body: formData
             });
