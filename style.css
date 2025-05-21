@@ -181,3 +181,8 @@ small {
     color: #333;
     text-align: center;
 }
+
+.envio-aviso {
+    color: #7f8c8d;
+    font-size: 14px;
+}
