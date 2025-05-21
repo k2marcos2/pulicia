@@ -2,9 +2,12 @@ function doPost(e) {
   try {
     const SPREADSHEET_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
     const SHEET_NAME = "RESPOSTAS";
+    const MIDIA_SHEET_NAME = "MIDIA";
     const DRIVE_FOLDER_ID = "1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w";
 
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    const midiaSheet = ss.getSheetByName(MIDIA_SHEET_NAME);
     const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
     const params = e.parameter;
 
@@ -57,12 +60,16 @@ function doPost(e) {
       params.EquipamentosObrigatorios || "",
       params.QtdCones || "",
       params.OutrosProblemas || "",
-      midiaLinks.join(" | "),
       assinaturaURL,
       pdfURL
     ];
 
     sheet.appendRow(novaLinha);
+    const rowIndex = sheet.getLastRow();
+
+    if (midiaLinks.length > 0) {
+      midiaSheet.appendRow([rowIndex, ...midiaLinks]);
+    }
 
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",
@@ -77,14 +84,6 @@ function doPost(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 }
-
-function getDirectDownloadLink(file) {
-  return "https://drive.google.com/uc?export=download&id=" + file.getId();
-}
-
-
-code do PDF.gs
-
 function gerarChecklistPDF(data, assinaturaURL, midiaLinks) {
   const folderId = '1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w';
   const templateId = '1FoRErwkfgz1otLS1PGwRoFpAWC_qth3V2vNmDP9_ge4';
@@ -98,25 +97,26 @@ function gerarChecklistPDF(data, assinaturaURL, midiaLinks) {
   const maxY = 750;
   let y = 30;
 
-  function adicionarBloco(titulo, conteudo) {
+  // Função para adicionar blocos de texto com controle de altura e espaçamento customizado
+  function adicionarBloco(titulo, conteudo, espacoApos = 10) {
     if (y + 40 > maxY) {
       slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
       y = 30;
     }
     const tituloShape = slide.insertTextBox(titulo, margin, y, larguraCaixa, 20);
     tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
-    y += 25;
+    y += 22;  // diminui mais um pouco
 
     const conteudoShape = slide.insertTextBox(conteudo, margin, y, larguraCaixa, 400);
-    y += conteudoShape.getHeight() + 10;
+    y += conteudoShape.getHeight() + espacoApos;
   }
 
-  // Bloco 1 — Título
+  // Título principal
   const tituloShape = slide.insertTextBox("CHECKLIST DE CAUTELA DE VIATURAS", margin, y, larguraCaixa, 30);
   tituloShape.getText().getTextStyle().setBold(true).setFontSize(22);
-  y += 40;
+  y += 35;  // menos espaço aqui também
 
-  // Dados do motorista
+  // Bloco — Dados do motorista
   const dadosMotorista = `
 Motorista: ${data.Motorista}
 Posto/Graduação: ${data.PostoGraduacao}
@@ -131,9 +131,9 @@ Placa: ${data.Placa}
 Km Atual: ${data.KmAtual}
 Km Próx. Revisão: ${data.KmProxRevisao}
 `;
-  adicionarBloco("DADOS DO MOTORISTA", dadosMotorista);
+  adicionarBloco("DADOS DO MOTORISTA", dadosMotorista, 4);  // colado
 
-  // Checklist técnico
+  // Bloco — Checklist técnico
   const checklistTecnico = `
 Nível de Água: ${data.NivelAgua}
 Nível de Óleo: ${data.NivelOleo}
@@ -147,15 +147,15 @@ Equipamentos Obrigatórios: ${data.EquipamentosObrigatorios}
 Qtd Cones: ${data.QtdCones}
 Outros Problemas: ${data.OutrosProblemas}
 `;
-  adicionarBloco("CHECKLIST DE VERIFICAÇÃO", checklistTecnico);
+  adicionarBloco("CHECKLIST DE VERIFICAÇÃO", checklistTecnico, 10);
 
-  // Mídias (se tiver)
+  // Bloco — Mídias
   if (midiaLinks.length > 0) {
     const midiasTexto = midiaLinks.join("\n");
-    adicionarBloco("MÍDIAS", midiasTexto);
+    adicionarBloco("MÍDIAS", midiasTexto, 10);
   }
 
-  // Assinatura (se tiver)
+  // Bloco — Assinatura
   if (assinaturaURL && assinaturaURL !== "Sem assinatura") {
     if (y + 80 > maxY) {
       slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
@@ -163,10 +163,10 @@ Outros Problemas: ${data.OutrosProblemas}
     }
     const tituloShape = slide.insertTextBox("ASSINATURA", margin, y, larguraCaixa, 20);
     tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
-    y += 25;
+    y += 22;
     const blob = UrlFetchApp.fetch(assinaturaURL).getBlob();
     slide.insertImage(blob, margin, y, 200, 60);
-    y += 70;
+    y += 65;
   }
 
   presentation.saveAndClose();
@@ -178,4 +178,19 @@ Outros Problemas: ${data.OutrosProblemas}
 
   return "https://drive.google.com/uc?export=download&id=" + pdfFile.getId();
 }
+function getDirectDownloadLink(file) {
+  return "https://drive.google.com/uc?export=download&id=" + file.getId();
+}
+function consultarMidias(idRegistro) {
+  const PLANILHA_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
+  const midiasSheet = SpreadsheetApp.openById(PLANILHA_ID).getSheetByName("MIDIA");
+  const dados = midiasSheet.getDataRange().getValues();
 
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][0] == idRegistro) {
+      return dados[i].slice(1).filter(String).join(" | ");
+    }
+  }
+
+  return "Sem mídias encontradas";
+}
