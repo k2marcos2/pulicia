@@ -7,13 +7,18 @@
     <title>Checklist - Cautela de Viaturas</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-
 </head>
 
 <body>
+
     <h2>Checklist de Cautela de Viaturas - 1º BPM</h2>
 
+    <div class="alerta-limite">
+        ⚠️ <strong>Aviso:</strong> Este formulário permite no máximo <strong>5 fotos capturadas pela câmera</strong>. Vídeos devem ter no máximo <strong>15 segundos</strong> e até <strong>2MB</strong>.
+    </div>
+
     <form id="checklist-form">
+
         <label>Motorista*</label>
         <input type="text" name="Motorista" required>
 
@@ -44,7 +49,7 @@
       <option value="AE">AE</option>
     </select>
 
-        <label>1. Veículo*</label>
+        <label>Veículo*</label>
         <select name="Veiculo" required>
       <option value="">Selecione...</option>
       <option value="Duster">Duster</option>
@@ -60,19 +65,19 @@
       <option value="Corolla">Corolla</option>
     </select>
 
-        <label>2. Prefixo*</label>
+        <label>Prefixo*</label>
         <input type="text" name="Prefixo" required>
 
-        <label>3. Placa*</label>
+        <label>Placa*</label>
         <input type="text" name="Placa" required>
 
-        <label>4. Km Atual*</label>
+        <label>Km Atual*</label>
         <input type="number" name="KmAtual" required>
 
         <label>Km da Próx. Revisão</label>
         <input type="number" name="KmProxRevisao">
 
-        <label>5. Nível de Água do Radiador</label>
+        <label>Nível de Água do Radiador</label>
         <select name="NivelAgua">
       <option>Normal</option>
       <option>Baixo</option>
@@ -84,7 +89,7 @@
       <option>Baixo</option>
     </select>
 
-        <label>6. Nível do Combustível*</label>
+        <label>Nível do Combustível*</label>
         <select name="NivelCombustivel" required>
       <option>1/1</option>
       <option>3/4</option>
@@ -94,14 +99,14 @@
       <option>Outro</option>
     </select>
 
-        <label>7. Pneus*</label>
+        <label>Pneus*</label>
         <select name="Pneus" required>
       <option>Bons</option>
       <option>Gastos/careca</option>
       <option>Outro</option>
     </select>
 
-        <label>8. Giroflex e Sirene*</label>
+        <label>Giroflex e Sirene*</label>
         <select name="GiroflexSirene" required>
       <option>Funcionam</option>
       <option>Giroflex danificado</option>
@@ -110,24 +115,24 @@
       <option>Outro</option>
     </select>
 
-        <label>9. Lâmpadas queimadas</label>
+        <label>Lâmpadas queimadas</label>
         <textarea name="LampadasQueimadas" rows="3"></textarea>
 
-        <label>10. Parabrisa*</label>
+        <label>Parabrisa*</label>
         <select name="Parabrisa" required>
       <option>Perfeito estado</option>
       <option>Danificado</option>
       <option>Outro</option>
     </select>
 
-        <label>11. Rádio*</label>
+        <label>Rádio*</label>
         <select name="Radio" required>
       <option>Funcionando</option>
       <option>Não funciona</option>
       <option>Outro</option>
     </select>
 
-        <label>12. Equipamentos Obrigatórios</label>
+        <label>Equipamentos Obrigatórios</label>
         <div class="checkbox-group">
             <label><input type="checkbox" name="EquipamentosObrigatorios" value="Chave de roda"> Chave de roda</label>
             <label><input type="checkbox" name="EquipamentosObrigatorios" value="Macaco"> Macaco</label>
@@ -139,34 +144,31 @@
         <label>Quantidade de Cones</label>
         <input type="number" name="QtdCones">
 
-        <label>13. Outros Problemas - Descrever</label>
+        <label>Outros Problemas - Descrever</label>
         <textarea name="OutrosProblemas" rows="4"></textarea>
 
         <label>Fotos da Viatura</label>
         <div id="camera-container">
-            <video id="camera" autoplay playsinline style="max-width: 100%; border-radius: 8px;"></video>
-            <br>
+            <video id="camera" autoplay playsinline></video><br>
             <button type="button" id="capture">📷 Tirar Foto</button>
         </div>
 
-        <div id="preview-container" style="margin-top: 10px;">
+        <div id="preview-container">
             <h4>Fotos capturadas:</h4>
-            <div id="previews" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+            <div id="previews"></div>
         </div>
 
         <label>Selecionar fotos ou vídeos da galeria</label>
         <input type="file" id="midia" name="midia" accept="image/*,video/*" multiple>
 
         <label>Assinatura:</label>
-        <canvas id="signature-pad" width="300" height="150" style="border:1px solid #000;"></canvas>
+        <canvas id="signature-pad"></canvas>
         <input type="hidden" name="AssinaturaBase64" id="assinatura-base64">
         <button type="button" id="clear-signature">Limpar Assinatura</button>
 
         <br><br>
         <button type="submit" id="submit-btn">Enviar</button>
     </form>
-    <div id="pdf-download" style="text-align:center; margin-top:20px;"></div>
-
 
     <script src="base.js"></script>
 </body>
