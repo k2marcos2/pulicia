@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(err => {
             console.error("Erro ao acessar câmera: ", err);
-            alert("Não foi possível acessar a câmera.");
+            alert("Erro: não foi possível acessar a câmera. Verifique as permissões e se está usando HTTPS.");
         });
 
     // Captura imagem da câmera
@@ -54,10 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 'image/jpeg');
     });
 
+    // Limpa a assinatura
     clearButton.addEventListener('click', () => {
         signaturePad.clear();
     });
 
+    // Redimensiona canvas da assinatura para responsividade
     function resizeCanvas() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
         const rect = canvas.getBoundingClientRect();
@@ -70,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
+    // Envio do formulário
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -87,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(form);
         formData.set('AssinaturaBase64', signaturePad.toDataURL('image/png'));
 
-        // Converte fotos da câmera
+        // Fotos da câmera → Base64
         const fotosBase64 = await Promise.all(fotosCapturadas.map(blob => {
             return new Promise(resolve => {
                 const reader = new FileReader();
@@ -99,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append(`MidiaBase64_${i}`, base64);
         });
 
-        // Converte mídia da galeria
+        // Fotos/Vídeos da galeria → Base64
         const galeriaFiles = Array.from(midiaInput.files);
         for (let i = 0; i < galeriaFiles.length; i++) {
             const file = galeriaFiles[i];
@@ -111,8 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append(`MidiaBase64_${fotosBase64.length + i}`, base64);
         }
 
+        // Envia para Google Apps Script
         try {
-            const response = await fetch("https://script.google.com/macros/s/AKfycbx1LDG4gWdn1yL1-LFczsx-2nFtVPrckrJYnbegmjSbWhAyfZcyxVc9zAkoiRBl_nRfFg/exec", {
+            const response = await fetch("https://script.google.com/macros/s/AKfycbzt6GdJ7DgvtD3vI3FimGDilfhPENWF1hK8La7zbHkqLNpq5VTkJDe_fZF9kK7rm9j9/exec", {
                 method: "POST",
                 body: formData
             });
