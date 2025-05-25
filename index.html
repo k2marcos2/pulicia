@@ -148,8 +148,8 @@
         <textarea name="OutrosProblemas" rows="4"></textarea>
 
         <label>Fotos da Viatura</label>
-        <div id="camera-container">
-            <video id="camera" autoplay playsinline></video><br>
+        <div id="camera-container" style="text-align: center;">
+            <video id="camera" autoplay playsinline muted></video><br>
             <button type="button" id="capture">📷 Tirar Foto</button>
         </div>
 
@@ -157,6 +157,7 @@
             <h4>Fotos capturadas:</h4>
             <div id="previews"></div>
         </div>
+
 
         <label>Selecionar fotos ou vídeos da galeria</label>
         <input type="file" id="midia" name="midia" accept="image/*,video/*" multiple>

@@ -14,19 +14,35 @@ document.addEventListener('DOMContentLoaded', () => {
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
         .then(stream => {
             video.srcObject = stream;
+            video.onloadedmetadata = () => {
+                video.play();
+                video.style.visibility = 'visible';
+                video.style.height = 'auto';
+            };
         })
         .catch(err => {
             console.error("Erro ao acessar câmera: ", err);
             alert("Não foi possível acessar a câmera.");
         });
 
-    // Captura a imagem da câmera
+    // Captura imagem da câmera
     captureBtn.addEventListener('click', () => {
+        if (!video.videoWidth || !video.videoHeight) {
+            alert("A câmera ainda está carregando. Tente novamente.");
+            return;
+        }
+
         const canvasFoto = document.createElement('canvas');
         canvasFoto.width = video.videoWidth;
         canvasFoto.height = video.videoHeight;
         canvasFoto.getContext('2d').drawImage(video, 0, 0);
+
         canvasFoto.toBlob(blob => {
+            if (!blob) {
+                alert("Erro ao capturar a imagem da câmera.");
+                return;
+            }
+
             fotosCapturadas.push(blob);
 
             const img = document.createElement('img');
@@ -44,8 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resizeCanvas() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        canvas.width = canvas.offsetWidth * ratio;
-        canvas.height = canvas.offsetHeight * ratio;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * ratio;
+        canvas.height = rect.height * ratio;
         canvas.getContext('2d').scale(ratio, ratio);
         signaturePad.clear();
     }
@@ -53,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    form.addEventListener('submit', async(e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const submitButton = document.getElementById('submit-btn');
@@ -70,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(form);
         formData.set('AssinaturaBase64', signaturePad.toDataURL('image/png'));
 
-        // Converte as fotos da câmera para base64
+        // Converte fotos da câmera
         const fotosBase64 = await Promise.all(fotosCapturadas.map(blob => {
             return new Promise(resolve => {
                 const reader = new FileReader();
@@ -82,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append(`MidiaBase64_${i}`, base64);
         });
 
-        // Converte imagens da galeria para base64
+        // Converte mídia da galeria
         const galeriaFiles = Array.from(midiaInput.files);
         for (let i = 0; i < galeriaFiles.length; i++) {
             const file = galeriaFiles[i];
@@ -95,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch("https://script.google.com/macros/s/AKfycbzt6GdJ7DgvtD3vI3FimGDilfhPENWF1hK8La7zbHkqLNpq5VTkJDe_fZF9kK7rm9j9/exec", {
+            const response = await fetch("https://script.google.com/macros/s/AKfycbx1LDG4gWdn1yL1-LFczsx-2nFtVPrckrJYnbegmjSbWhAyfZcyxVc9zAkoiRBl_nRfFg/exec", {
                 method: "POST",
                 body: formData
             });
@@ -114,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             console.error("Erro ao enviar:", err);
-            alert("Erro ao enviar o formulário.");
+            alert("Erro ao enviar o formulário: " + err.message);
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = "Enviar";
