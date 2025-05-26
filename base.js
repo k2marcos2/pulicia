@@ -106,6 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const galeriaFiles = Array.from(midiaInput.files);
         for (let i = 0; i < galeriaFiles.length; i++) {
             const file = galeriaFiles[i];
+            if (!file.type.startsWith("image/")) continue; // ignora vídeos
+
             const base64 = await new Promise(resolve => {
                 const reader = new FileReader();
                 reader.onloadend = () => resolve(reader.result);
@@ -113,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             formData.append(`MidiaBase64_${fotosBase64.length + i}`, base64);
         }
+
 
         // Envia para Google Apps Script
         try {
