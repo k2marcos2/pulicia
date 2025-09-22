@@ -204,3 +204,16 @@ small {
   visibility: hidden;
 }
 
+#camera-container-viatura,
+#camera-container-carteirinha {
+  margin: 10px 0;
+}
+
+video {
+  width: 100%;
+  max-width: 400px;
+  border: 2px solid #004aad;
+  border-radius: 8px;
+  display: block;
+  margin-bottom: 10px;
+}
