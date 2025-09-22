@@ -217,3 +217,10 @@ video {
   display: block;
   margin-bottom: 10px;
 }
+#previews-viatura,
+#previews-carteirinha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+

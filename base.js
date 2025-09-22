@@ -49,6 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
       fotosViatura.push(blob);
       const img = document.createElement('img');
       img.src = URL.createObjectURL(blob);
+      img.style.width = "120px";
+      img.style.height = "auto";
+      img.style.margin = "5px";
+      img.style.borderRadius = "6px";
+      img.style.border = "1px solid #ccc";
       previewsViatura.appendChild(img);
     }, 'image/jpeg');
   });
@@ -58,44 +63,49 @@ document.addEventListener('DOMContentLoaded', () => {
     cameraContainerViatura.style.display = "none";
   });
 
-  // ===== Carteirinha =====
-  const abrirCamCart = document.getElementById('abrir-camera-carteirinha');
-  const cameraContainerCart = document.getElementById('camera-container-carteirinha');
-  const videoCart = document.getElementById('camera-carteirinha');
-  const btnFotoCart = document.getElementById('tirar-foto-carteirinha');
-  const btnFecharCart = document.getElementById('fechar-camera-carteirinha');
-  const previewsCart = document.getElementById('previews-carteirinha');
-  let streamCart;
-  let fotosCarteirinha = [];
+  // ===== Cartão de Abastecimento =====
+  const abrirCamCartao = document.getElementById('abrir-camera-cartao');
+  const cameraContainerCartao = document.getElementById('camera-container-cartao');
+  const videoCartao = document.getElementById('camera-cartao');
+  const btnFotoCartao = document.getElementById('tirar-foto-cartao');
+  const btnFecharCartao = document.getElementById('fechar-camera-cartao');
+  const previewsCartao = document.getElementById('previews-cartao');
+  let streamCartao;
+  let fotosCartao = [];
 
-  abrirCamCart.addEventListener('click', async () => {
+  abrirCamCartao.addEventListener('click', async () => {
     try {
-      streamCart = await navigator.mediaDevices.getUserMedia({
+      streamCartao = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" }
       });
-      videoCart.srcObject = streamCart;
-      cameraContainerCart.style.display = "block";
+      videoCartao.srcObject = streamCartao;
+      cameraContainerCartao.style.display = "block";
     } catch (err) {
       alert("Erro ao abrir câmera: " + err.message);
     }
   });
 
-  btnFotoCart.addEventListener('click', () => {
+  btnFotoCartao.addEventListener('click', () => {
     const canvas = document.createElement('canvas');
-    canvas.width = videoCart.videoWidth;
-    canvas.height = videoCart.videoHeight;
-    canvas.getContext('2d').drawImage(videoCart, 0, 0);
+    canvas.width = videoCartao.videoWidth;
+    canvas.height = videoCartao.videoHeight;
+    canvas.getContext('2d').drawImage(videoCartao, 0, 0);
     canvas.toBlob(blob => {
-      fotosCarteirinha.push(blob);
+      fotosCartao.push(blob);
       const img = document.createElement('img');
       img.src = URL.createObjectURL(blob);
-      previewsCart.appendChild(img);
+      img.style.width = "120px";
+      img.style.height = "auto";
+      img.style.margin = "5px";
+      img.style.borderRadius = "6px";
+      img.style.border = "1px solid #ccc";
+      previewsCartao.appendChild(img);
     }, 'image/jpeg');
   });
 
-  btnFecharCart.addEventListener('click', () => {
-    if (streamCart) streamCart.getTracks().forEach(track => track.stop());
-    cameraContainerCart.style.display = "none";
+  btnFecharCartao.addEventListener('click', () => {
+    if (streamCartao) streamCartao.getTracks().forEach(track => track.stop());
+    cameraContainerCartao.style.display = "none";
   });
 
   // ===== Assinatura =====
@@ -122,9 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const viaturaBase64 = await Promise.all(fotosViatura.map(file => toBase64(file)));
     viaturaBase64.forEach((base64, i) => formData.append(`MidiaBase64_${i}`, base64));
 
-    // Carteirinha
-    const cartBase64 = await Promise.all(fotosCarteirinha.map(file => toBase64(file)));
-    cartBase64.forEach((base64, i) => formData.append(`CarteirinhaBase64_${i}`, base64));
+    // Cartão de Abastecimento
+    const cartaoBase64 = await Promise.all(fotosCartao.map(file => toBase64(file)));
+    cartaoBase64.forEach((base64, i) => formData.append(`CartaoBase64_${i}`, base64));
 
     // Galeria
     const galeriaFiles = Array.from(midiaInputGaleria.files);
@@ -134,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbzbAyw6_QTRsM4vjkXe7I-dq30p061fCt9qzaKn0-aoBCM6USfX_8I4CDz9_JVgMsU2Jw/exec", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbwrscitHuCXci0W25XBz2DlxFfEcif_0tk_TkLaB1pkVsA6tqDpsFGjxeR231RkkkJwFQ/exec", {
         method: "POST",
         body: formData
       });
