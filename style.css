@@ -223,4 +223,57 @@ video {
   flex-wrap: wrap;
   gap: 8px;
 }
+/* Área de previews de fotos */
+#previews-viatura,
+#previews-cartao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+#previews-viatura div,
+#previews-cartao div {
+  position: relative;
+  display: inline-block;
+}
+
+#previews-viatura img,
+#previews-cartao img {
+  width: 120px;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  display: block;
+}
+
+/* Botão de remover foto */
+.btn-remover-foto {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ff0000 !important;   /* vermelho sólido */
+  color: #fff !important;           /* X branco forte */
+  border: 2px solid #fff;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  transition: transform 0.2s ease, background 0.2s ease;
+  padding: 0;
+}
+
+.btn-remover-foto:hover {
+  background: #c40000 !important;
+  transform: scale(1.25);
+}
+
 

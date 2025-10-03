@@ -1,3 +1,11 @@
+####################################################################################################################
+
+
+função dopost
+
+
+#############################################################################################################################
+
 function doPost(e) {
   try {
     const SPREADSHEET_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
@@ -13,9 +21,17 @@ function doPost(e) {
 
     Logger.log(JSON.stringify(params));
 
+    // -----------------------------
+    // FOTOS VIATURA
+    // -----------------------------
     let midiaLinks = [];
+    let midiasId = "Sem mídia";
+
     for (let key in params) {
       if (key.startsWith("MidiaBase64_")) {
+        if (midiasId === "Sem mídia") {
+          midiasId = new Date().getTime();
+        }
         const base64 = params[key].split(',')[1];
         const blob = Utilities.newBlob(Utilities.base64Decode(base64), "image/jpeg", `foto_${Date.now()}.jpg`);
         const file = folder.createFile(blob);
@@ -24,22 +40,67 @@ function doPost(e) {
       }
     }
 
-    let assinaturaURL = "Sem assinatura";
-    if (params.AssinaturaBase64) {
-      const base64Data = params.AssinaturaBase64.split(',')[1];
-      const blob = Utilities.newBlob(Utilities.base64Decode(base64Data), "image/png", `assinatura_${params.Motorista}_${Date.now()}.png`);
-      const file = folder.createFile(blob);
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      assinaturaURL = getDirectDownloadLink(file);
+    if (midiaLinks.length > 0) {
+      midiaSheet.appendRow([midiasId, ...midiaLinks]);
     }
 
-    const pdfURL = gerarChecklistPDF(params, assinaturaURL, midiaLinks);
+    // -----------------------------
+    // FOTOS CARTÃO DE ABASTECIMENTO
+    // -----------------------------
+    let cartaoLinks = [];
+    let cartaoId = "Sem cartão";
 
+    for (let key in params) {
+      if (key.startsWith("CartaoBase64_")) {
+        if (cartaoId === "Sem cartão") {
+          cartaoId = new Date().getTime();
+        }
+        const base64 = params[key].split(',')[1];
+        const blob = Utilities.newBlob(Utilities.base64Decode(base64), "image/jpeg", `cartao_${Date.now()}.jpg`);
+        const file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        cartaoLinks.push(getDirectDownloadLink(file));
+      }
+    }
+
+    if (cartaoLinks.length > 0) {
+      midiaSheet.appendRow([cartaoId, ...cartaoLinks]);
+    }
+
+    // -----------------------------
+    // ASSINATURA
+    // -----------------------------
+    let assinaturaURL = "Sem assinatura";
+    if (params.AssinaturaBase64 && params.AssinaturaBase64.includes(",")) {
+      try {
+        const base64Data = params.AssinaturaBase64.split(',')[1];
+        const blob = Utilities.newBlob(
+          Utilities.base64Decode(base64Data),
+          "image/png",
+          `assinatura_${params.Motorista}_${Date.now()}.png`
+        );
+        const file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        assinaturaURL = getDirectDownloadLink(file);
+      } catch (err) {
+        Logger.log("Erro ao salvar assinatura: " + err);
+      }
+    }
+
+    // -----------------------------
+    // PDF
+    // -----------------------------
+    const pdfURL = gerarChecklistPDF(params, assinaturaURL, midiaLinks, cartaoLinks);
+
+    // -----------------------------
+    // PLANILHA RESPOSTAS
+    // -----------------------------
     const novaLinha = [
       new Date(),
       params.Motorista || "",
       params.PostoGraduacao || "",
-      params.RG || "",
+      params["RG-Militar"] || "",
+      params.Matricula || "",
       params.DataCautela || "",
       params.HoraCautela || "",
       params.ValidadeCNH || "",
@@ -60,16 +121,13 @@ function doPost(e) {
       params.EquipamentosObrigatorios || "",
       params.QtdCones || "",
       params.OutrosProblemas || "",
+      midiasId,
+      cartaoId,  // ✅ agora está certo
       assinaturaURL,
       pdfURL
     ];
 
     sheet.appendRow(novaLinha);
-    const rowIndex = sheet.getLastRow();
-
-    if (midiaLinks.length > 0) {
-      midiaSheet.appendRow([rowIndex, ...midiaLinks]);
-    }
 
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",
@@ -84,20 +142,30 @@ function doPost(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 }
-function gerarChecklistPDF(data, assinaturaURL, midiaLinks) {
+
+
+####################################################################################################################
+
+
+função do pdf
+
+
+#############################################################################################################################
+
+
+function gerarChecklistPDF(data, assinaturaURL, midiaLinks, cartaoLinks) {
   const folderId = '1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w';
   const templateId = '1FoRErwkfgz1otLS1PGwRoFpAWC_qth3V2vNmDP9_ge4';
 
   const copy = DriveApp.getFileById(templateId).makeCopy(`Checklist - ${data.Motorista}`, DriveApp.getFolderById(folderId));
   const presentation = SlidesApp.openById(copy.getId());
-  let slide = presentation.getSlides()[0];
+  slide = presentation.getSlides()[0]; // global para usar no helper
 
   const margin = 30;
   const larguraCaixa = 540;
   const maxY = 750;
-  let y = 30;
+  y = 30; // cursor global
 
-  // Função para adicionar blocos de texto com controle de altura e espaçamento customizado
   function adicionarBloco(titulo, conteudo, espacoApos = 10) {
     if (y + 40 > maxY) {
       slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
@@ -105,22 +173,27 @@ function gerarChecklistPDF(data, assinaturaURL, midiaLinks) {
     }
     const tituloShape = slide.insertTextBox(titulo, margin, y, larguraCaixa, 20);
     tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
-    y += 22;  // diminui mais um pouco
+    y += 22;
 
     const conteudoShape = slide.insertTextBox(conteudo, margin, y, larguraCaixa, 400);
     y += conteudoShape.getHeight() + espacoApos;
   }
 
-  // Título principal
+  // -----------------------------
+  // Título
+  // -----------------------------
   const tituloShape = slide.insertTextBox("CHECKLIST DE CAUTELA DE VIATURAS", margin, y, larguraCaixa, 30);
   tituloShape.getText().getTextStyle().setBold(true).setFontSize(22);
-  y += 35;  // menos espaço aqui também
+  y += 35;
 
-  // Bloco — Dados do motorista
+  // -----------------------------
+  // Dados motorista
+  // -----------------------------
   const dadosMotorista = `
 Motorista: ${data.Motorista}
 Posto/Graduação: ${data.PostoGraduacao}
-RG: ${data.RG}
+RGMilitar: ${data["RG-Militar"]}
+Matricula: ${data.Matricula}
 Data Cautela: ${data.DataCautela}
 Hora: ${data.HoraCautela}
 Validade CNH: ${data.ValidadeCNH}
@@ -131,9 +204,11 @@ Placa: ${data.Placa}
 Km Atual: ${data.KmAtual}
 Km Próx. Revisão: ${data.KmProxRevisao}
 `;
-  adicionarBloco("DADOS DO MOTORISTA", dadosMotorista, 4);  // colado
+  adicionarBloco("DADOS DO MOTORISTA", dadosMotorista, 4);
 
-  // Bloco — Checklist técnico
+  // -----------------------------
+  // Checklist técnico
+  // -----------------------------
   const checklistTecnico = `
 Nível de Água: ${data.NivelAgua}
 Nível de Óleo: ${data.NivelOleo}
@@ -149,13 +224,23 @@ Outros Problemas: ${data.OutrosProblemas}
 `;
   adicionarBloco("CHECKLIST DE VERIFICAÇÃO", checklistTecnico, 10);
 
-  // Bloco — Mídias
+  // -----------------------------
+  // Fotos da Viatura
+  // -----------------------------
   if (midiaLinks.length > 0) {
-    const midiasTexto = midiaLinks.join("\n");
-    adicionarBloco("MÍDIAS", midiasTexto, 10);
+    adicionarSecaoImagens("FOTOS DA VIATURA", midiaLinks, presentation, larguraCaixa, margin, maxY);
   }
 
-  // Bloco — Assinatura
+  // -----------------------------
+  // Cartão de Abastecimento
+  // -----------------------------
+  if (cartaoLinks && cartaoLinks.length > 0) {
+    adicionarSecaoImagens("CARTÃO DE ABASTECIMENTO", cartaoLinks, presentation, larguraCaixa, margin, maxY);
+  }
+
+  // -----------------------------
+  // Assinatura
+  // -----------------------------
   if (assinaturaURL && assinaturaURL !== "Sem assinatura") {
     if (y + 80 > maxY) {
       slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
@@ -164,9 +249,14 @@ Outros Problemas: ${data.OutrosProblemas}
     const tituloShape = slide.insertTextBox("ASSINATURA", margin, y, larguraCaixa, 20);
     tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
     y += 22;
-    const blob = UrlFetchApp.fetch(assinaturaURL).getBlob();
-    slide.insertImage(blob, margin, y, 200, 60);
-    y += 65;
+    try {
+      const blob = UrlFetchApp.fetch(assinaturaURL).getBlob();
+      slide.insertImage(blob, margin, y, 200, 60);
+      y += 70;
+    } catch (err) {
+      slide.insertTextBox("Erro ao carregar assinatura", margin, y, larguraCaixa, 20);
+      y += 25;
+    }
   }
 
   presentation.saveAndClose();
@@ -178,9 +268,60 @@ Outros Problemas: ${data.OutrosProblemas}
 
   return "https://drive.google.com/uc?export=download&id=" + pdfFile.getId();
 }
+
+
 function getDirectDownloadLink(file) {
   return "https://drive.google.com/uc?export=download&id=" + file.getId();
 }
+
+function adicionarSecaoImagens(titulo, links, presentation, larguraCaixa, margin, maxY) {
+  if (y + 100 > maxY) {
+    slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
+    y = 30;
+  }
+
+  const tituloShape = slide.insertTextBox(titulo, margin, y, larguraCaixa, 20);
+  tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
+  y += 30;
+
+  const larguraImg = 200;
+  const alturaImg = 150;
+  let x = margin;
+
+  links.forEach((url) => {
+    try {
+      const blob = UrlFetchApp.fetch(url).getBlob();
+      slide.insertImage(blob, x, y, larguraImg, alturaImg);
+
+      x += larguraImg + 20;
+      if (x + larguraImg > margin + larguraCaixa) {
+        x = margin;
+        y += alturaImg + 20;
+      }
+      if (y + alturaImg > maxY) {
+        slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
+        y = 30;
+        x = margin;
+      }
+    } catch (err) {
+      slide.insertTextBox("Erro ao carregar imagem: " + url, margin, y, larguraCaixa, 20);
+      y += 25;
+    }
+  });
+
+  y += alturaImg + 10;
+}
+
+####################################################################################################################
+
+
+function getDirectDownloadLink(file) {
+  return "https://drive.google.com/uc?export=download&id=" + file.getId();
+}
+
+
+####################################################################################################################
+
 function consultarMidias(idRegistro) {
   const PLANILHA_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
   const midiasSheet = SpreadsheetApp.openById(PLANILHA_ID).getSheetByName("MIDIA");
@@ -192,5 +333,63 @@ function consultarMidias(idRegistro) {
     }
   }
 
+  return "Sem mídias encontradas";
+}
+
+
+####################################################################################################################
+
+function adicionarSecaoImagens(titulo, links, presentation, larguraCaixa, margin, maxY) {
+  if (y + 100 > maxY) {
+    slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
+    y = 30;
+  }
+
+  const tituloShape = slide.insertTextBox(titulo, margin, y, larguraCaixa, 20);
+  tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
+  y += 30;
+
+  const larguraImg = 200;
+  const alturaImg = 150;
+  let x = margin;
+
+  links.forEach((url) => {
+    try {
+      const blob = UrlFetchApp.fetch(url).getBlob();
+      slide.insertImage(blob, x, y, larguraImg, alturaImg);
+
+      x += larguraImg + 20;
+      if (x + larguraImg > margin + larguraCaixa) {
+        x = margin;
+        y += alturaImg + 20;
+      }
+      if (y + alturaImg > maxY) {
+        slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
+        y = 30;
+        x = margin;
+      }
+    } catch (err) {
+      slide.insertTextBox("Erro ao carregar imagem: " + url, margin, y, larguraCaixa, 20);
+      y += 25;
+    }
+  });
+
+  y += alturaImg + 10;
+}
+
+function getDirectDownloadLink(file) {
+  return "https://drive.google.com/uc?export=download&id=" + file.getId();
+}
+
+function consultarMidias(idRegistro) {
+  const PLANILHA_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
+  const midiasSheet = SpreadsheetApp.openById(PLANILHA_ID).getSheetByName("MIDIA");
+  const dados = midiasSheet.getDataRange().getValues();
+
+  for (let i = 1; i < dados.length; i++) {
+    if (dados[i][0] == idRegistro) {
+      return dados[i].slice(1).filter(String).join(" | ");
+    }
+  }
   return "Sem mídias encontradas";
 }

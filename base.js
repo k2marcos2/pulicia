@@ -45,16 +45,44 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.width = videoViatura.videoWidth;
     canvas.height = videoViatura.videoHeight;
     canvas.getContext('2d').drawImage(videoViatura, 0, 0);
+
     canvas.toBlob(blob => {
-      fotosViatura.push(blob);
+      const index = fotosViatura.push(blob) - 1;
+
+      // container da foto + botão
+      const wrapper = document.createElement('div');
+      wrapper.style.display = "inline-block";
+      wrapper.style.position = "relative";
+      wrapper.style.margin = "5px";
+
       const img = document.createElement('img');
       img.src = URL.createObjectURL(blob);
       img.style.width = "120px";
       img.style.height = "auto";
-      img.style.margin = "5px";
       img.style.borderRadius = "6px";
       img.style.border = "1px solid #ccc";
-      previewsViatura.appendChild(img);
+
+      const btnRemover = document.createElement('button');
+      btnRemover.textContent = "X";
+      btnRemover.style.position = "absolute";
+      btnRemover.style.top = "2px";
+      btnRemover.style.right = "2px";
+      btnRemover.style.background = "rgba(255,0,0,0.7)";
+      btnRemover.style.color = "white";
+      btnRemover.style.border = "none";
+      btnRemover.style.borderRadius = "4px";
+      btnRemover.style.cursor = "pointer";
+      btnRemover.style.padding = "2px 6px";
+      btnRemover.style.fontSize = "12px";
+
+      btnRemover.addEventListener('click', () => {
+        wrapper.remove(); // tira da tela
+        fotosViatura.splice(index, 1); // tira do array
+      });
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(btnRemover);
+      previewsViatura.appendChild(wrapper);
     }, 'image/jpeg');
   });
 
@@ -90,16 +118,44 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.width = videoCartao.videoWidth;
     canvas.height = videoCartao.videoHeight;
     canvas.getContext('2d').drawImage(videoCartao, 0, 0);
+
     canvas.toBlob(blob => {
-      fotosCartao.push(blob);
+      const index = fotosCartao.push(blob) - 1;
+
+      // container da foto + botão
+      const wrapper = document.createElement('div');
+      wrapper.style.display = "inline-block";
+      wrapper.style.position = "relative";
+      wrapper.style.margin = "5px";
+
       const img = document.createElement('img');
       img.src = URL.createObjectURL(blob);
       img.style.width = "120px";
       img.style.height = "auto";
-      img.style.margin = "5px";
       img.style.borderRadius = "6px";
       img.style.border = "1px solid #ccc";
-      previewsCartao.appendChild(img);
+
+      const btnRemover = document.createElement('button');
+      btnRemover.textContent = "X";
+      btnRemover.style.position = "absolute";
+      btnRemover.style.top = "2px";
+      btnRemover.style.right = "2px";
+      btnRemover.style.background = "rgba(255,0,0,0.7)";
+      btnRemover.style.color = "white";
+      btnRemover.style.border = "none";
+      btnRemover.style.borderRadius = "4px";
+      btnRemover.style.cursor = "pointer";
+      btnRemover.style.padding = "2px 6px";
+      btnRemover.style.fontSize = "12px";
+
+      btnRemover.addEventListener('click', () => {
+        wrapper.remove(); // tira da tela
+        fotosCartao.splice(index, 1); // tira do array
+      });
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(btnRemover);
+      previewsCartao.appendChild(wrapper);
     }, 'image/jpeg');
   });
 
