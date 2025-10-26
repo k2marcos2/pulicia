@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbx1WqA9ochJrNV0lzJ52b9k4hQxrjynw5ReLXbsBvV7RAvasweM7VCOKeZcIe0UXE8v/exec", {
+      const response = await fetch("https://script.google.com/macros/s/AKfycbx41GDFGRwaDGXNzFcFNjuYJFESdDaRnJsuemfJu5gEEihQ8jQkqO-jGpMCLRCbzT1nwA/exec", {
         method: "POST",
         body: formData
       });

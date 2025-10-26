@@ -144,6 +144,7 @@ function doPost(e) {
 }
 
 
+
 ####################################################################################################################
 
 
@@ -157,14 +158,14 @@ function gerarChecklistPDF(data, assinaturaURL, midiaLinks, cartaoLinks) {
   const folderId = '1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w';
   const templateId = '1FoRErwkfgz1otLS1PGwRoFpAWC_qth3V2vNmDP9_ge4';
 
-  const copy = DriveApp.getFileById(templateId).makeCopy(`Checklist - ${data.Motorista}`, DriveApp.getFolderById(folderId));
+  const copy = DriveApp.getFileById(templateId).makeCopy(`${data.Prefixo} - ${data.Placa}`, DriveApp.getFolderById(folderId));
   const presentation = SlidesApp.openById(copy.getId());
   slide = presentation.getSlides()[0]; // global para usar no helper
 
   const margin = 30;
   const larguraCaixa = 540;
   const maxY = 750;
-  y = 30; // cursor global
+  y = 160; // cursor global
 
   function adicionarBloco(titulo, conteudo, espacoApos = 10) {
     if (y + 40 > maxY) {
@@ -314,14 +315,6 @@ function adicionarSecaoImagens(titulo, links, presentation, larguraCaixa, margin
 
 ####################################################################################################################
 
-
-function getDirectDownloadLink(file) {
-  return "https://drive.google.com/uc?export=download&id=" + file.getId();
-}
-
-
-####################################################################################################################
-
 function consultarMidias(idRegistro) {
   const PLANILHA_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
   const midiasSheet = SpreadsheetApp.openById(PLANILHA_ID).getSheetByName("MIDIA");
@@ -334,8 +327,7 @@ function consultarMidias(idRegistro) {
   }
 
   return "Sem mídias encontradas";
-}
-
+} 
 
 ####################################################################################################################
 
@@ -393,3 +385,17 @@ function consultarMidias(idRegistro) {
   }
   return "Sem mídias encontradas";
 }
+#######################################################################################################################################################
+
+
+function onEdit(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("RESPOSTAS"); // Nome da aba
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+
+  if (lastRow > 1) { // Garante que existe mais de 1 linha (cabeçalho + dados)
+    const range = sheet.getRange(2, 1, lastRow - 1, lastCol); // Pega todas as linhas de dados
+    range.sort({column: 1, ascending: false}); // Ordena pela coluna A (data/hora) do mais recente p/ mais antigo
+  }
+}
+  
