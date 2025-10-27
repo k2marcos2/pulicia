@@ -1,10 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('checklist-form');
   const midiaInputGaleria = document.getElementById('midia');
-
   const canvas = document.getElementById('signature-pad');
 
-  // 🔧 Ajusta o tamanho lógico do canvas para coincidir com o tamanho visual na tela
+  // 🔗 URL do App Script (substitua pela sua se for diferente)
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwYfY3RmGniI2RaOEdpY-xHBak6SZb6ib06b94RkEaQ5Mm75BaOGb68GiK9xtasiAY-/exec";
+
+  // ===============================
+  // AJUSTE DE CANVAS (ASSINATURA)
+  // ===============================
   function resizeCanvas() {
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
     canvas.width = canvas.offsetWidth * ratio;
@@ -12,13 +16,15 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.getContext("2d").scale(ratio, ratio);
   }
 
-  resizeCanvas(); // ajusta ao carregar
-  window.addEventListener("resize", resizeCanvas); // ajusta ao redimensionar a tela
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
 
   const signaturePad = new SignaturePad(canvas);
   const clearButton = document.getElementById('clear-signature');
 
-  // ===== Viatura =====
+  // ===============================
+  // VIATURA
+  // ===============================
   const abrirCamViatura = document.getElementById('abrir-camera-viatura');
   const cameraContainerViatura = document.getElementById('camera-container-viatura');
   const videoViatura = document.getElementById('camera-viatura');
@@ -41,15 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnFotoViatura.addEventListener('click', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = videoViatura.videoWidth;
-    canvas.height = videoViatura.videoHeight;
-    canvas.getContext('2d').drawImage(videoViatura, 0, 0);
+    const canvasTemp = document.createElement('canvas');
+    canvasTemp.width = videoViatura.videoWidth;
+    canvasTemp.height = videoViatura.videoHeight;
+    canvasTemp.getContext('2d').drawImage(videoViatura, 0, 0);
 
-    canvas.toBlob(blob => {
+    canvasTemp.toBlob(blob => {
       const index = fotosViatura.push(blob) - 1;
 
-      // container da foto + botão
       const wrapper = document.createElement('div');
       wrapper.style.display = "inline-block";
       wrapper.style.position = "relative";
@@ -64,20 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const btnRemover = document.createElement('button');
       btnRemover.textContent = "X";
-      btnRemover.style.position = "absolute";
-      btnRemover.style.top = "2px";
-      btnRemover.style.right = "2px";
-      btnRemover.style.background = "rgba(255,0,0,0.7)";
-      btnRemover.style.color = "white";
-      btnRemover.style.border = "none";
-      btnRemover.style.borderRadius = "4px";
-      btnRemover.style.cursor = "pointer";
-      btnRemover.style.padding = "2px 6px";
-      btnRemover.style.fontSize = "12px";
+      btnRemover.className = "btn-remover-foto";
 
       btnRemover.addEventListener('click', () => {
-        wrapper.remove(); // tira da tela
-        fotosViatura.splice(index, 1); // tira do array
+        wrapper.remove();
+        fotosViatura.splice(index, 1);
       });
 
       wrapper.appendChild(img);
@@ -91,7 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
     cameraContainerViatura.style.display = "none";
   });
 
-  // ===== Cartão de Abastecimento =====
+  // ===============================
+  // CARTÃO DE ABASTECIMENTO
+  // ===============================
   const abrirCamCartao = document.getElementById('abrir-camera-cartao');
   const cameraContainerCartao = document.getElementById('camera-container-cartao');
   const videoCartao = document.getElementById('camera-cartao');
@@ -114,15 +112,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnFotoCartao.addEventListener('click', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = videoCartao.videoWidth;
-    canvas.height = videoCartao.videoHeight;
-    canvas.getContext('2d').drawImage(videoCartao, 0, 0);
+    const canvasTemp = document.createElement('canvas');
+    canvasTemp.width = videoCartao.videoWidth;
+    canvasTemp.height = videoCartao.videoHeight;
+    canvasTemp.getContext('2d').drawImage(videoCartao, 0, 0);
 
-    canvas.toBlob(blob => {
+    canvasTemp.toBlob(blob => {
       const index = fotosCartao.push(blob) - 1;
 
-      // container da foto + botão
       const wrapper = document.createElement('div');
       wrapper.style.display = "inline-block";
       wrapper.style.position = "relative";
@@ -137,20 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const btnRemover = document.createElement('button');
       btnRemover.textContent = "X";
-      btnRemover.style.position = "absolute";
-      btnRemover.style.top = "2px";
-      btnRemover.style.right = "2px";
-      btnRemover.style.background = "rgba(255,0,0,0.7)";
-      btnRemover.style.color = "white";
-      btnRemover.style.border = "none";
-      btnRemover.style.borderRadius = "4px";
-      btnRemover.style.cursor = "pointer";
-      btnRemover.style.padding = "2px 6px";
-      btnRemover.style.fontSize = "12px";
+      btnRemover.className = "btn-remover-foto";
 
       btnRemover.addEventListener('click', () => {
-        wrapper.remove(); // tira da tela
-        fotosCartao.splice(index, 1); // tira do array
+        wrapper.remove();
+        fotosCartao.splice(index, 1);
       });
 
       wrapper.appendChild(img);
@@ -164,10 +152,14 @@ document.addEventListener('DOMContentLoaded', () => {
     cameraContainerCartao.style.display = "none";
   });
 
-  // ===== Assinatura =====
+  // ===============================
+  // ASSINATURA
+  // ===============================
   clearButton.addEventListener('click', () => signaturePad.clear());
 
-  // ===== Envio =====
+  // ===============================
+  // ENVIO DO FORMULÁRIO
+  // ===============================
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitButton = document.getElementById('submit-btn');
@@ -182,29 +174,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const formData = new FormData(form);
+
+    // ✅ Junta todos os checkboxes de Equipamentos Obrigatórios
+    const equipamentos = Array.from(
+      document.querySelectorAll('input[name="EquipamentosObrigatorios"]:checked')
+    ).map(el => el.value);
+    formData.delete("EquipamentosObrigatorios");
+    formData.append("EquipamentosObrigatorios", equipamentos.join(", "));
+
+    // ✅ Assinatura
     formData.set('AssinaturaBase64', signaturePad.toDataURL('image/png'));
 
-    // Viatura
+    // ✅ Fotos da viatura
     const viaturaBase64 = await Promise.all(fotosViatura.map(file => toBase64(file)));
     viaturaBase64.forEach((base64, i) => formData.append(`MidiaBase64_${i}`, base64));
 
-    // Cartão de Abastecimento
+    // ✅ Fotos do cartão
     const cartaoBase64 = await Promise.all(fotosCartao.map(file => toBase64(file)));
     cartaoBase64.forEach((base64, i) => formData.append(`CartaoBase64_${i}`, base64));
 
-    // Galeria
+    // ✅ Galeria
     const galeriaFiles = Array.from(midiaInputGaleria.files);
     for (let i = 0; i < galeriaFiles.length; i++) {
       const base64 = await toBase64(galeriaFiles[i]);
       formData.append(`MidiaBase64_${viaturaBase64.length + i}`, base64);
     }
 
+    // ===============================
+    // ENVIA PARA O APP SCRIPT
+    // ===============================
     try {
-      const response = await fetch("https://script.google.com/macros/s/AKfycbx41GDFGRwaDGXNzFcFNjuYJFESdDaRnJsuemfJu5gEEihQ8jQkqO-jGpMCLRCbzT1nwA/exec", {
+      const response = await fetch(SCRIPT_URL, {
         method: "POST",
         body: formData
       });
+
       const result = await response.json();
+
       if (result.status === "success") {
         sessionStorage.setItem("pdfUrl", result.pdf);
         window.location.href = "sucesso.html";
