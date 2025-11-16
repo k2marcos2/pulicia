@@ -8,32 +8,45 @@ função dopost
 
 function doPost(e) {
   try {
-    const SPREADSHEET_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
+    // IDs fixos
+    const SPREADSHEET_ID = "1v4exnILPrSI3GYEo30UYEnqsaqmMn2BnTiZBz4OuzSg";
     const SHEET_NAME = "RESPOSTAS";
     const MIDIA_SHEET_NAME = "MIDIA";
-    const DRIVE_FOLDER_ID = "1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w";
+    const DRIVE_FOLDER_ID = "13ymXgVPbIzVdJK9IKpnd0-X-_6BBWXOe";
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheetByName(SHEET_NAME);
     const midiaSheet = ss.getSheetByName(MIDIA_SHEET_NAME);
     const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-    const params = e.parameter;
-
-    Logger.log(JSON.stringify(params));
 
     // -----------------------------
-    // FOTOS VIATURA
+    // ✅ Trata múltiplos valores (checkboxes)
+    // -----------------------------
+    const params = e.parameter;
+    if (e.parameters.EquipamentosObrigatorios) {
+      // Se vier como array (múltiplos checkboxes)
+      if (Array.isArray(e.parameters.EquipamentosObrigatorios)) {
+        params.EquipamentosObrigatorios = e.parameters.EquipamentosObrigatorios.join(", ");
+      } else {
+        params.EquipamentosObrigatorios = e.parameters.EquipamentosObrigatorios;
+      }
+    }
+
+    // -----------------------------
+    // 📸 FOTOS DA VIATURA
     // -----------------------------
     let midiaLinks = [];
     let midiasId = "Sem mídia";
 
     for (let key in params) {
       if (key.startsWith("MidiaBase64_")) {
-        if (midiasId === "Sem mídia") {
-          midiasId = new Date().getTime();
-        }
-        const base64 = params[key].split(',')[1];
-        const blob = Utilities.newBlob(Utilities.base64Decode(base64), "image/jpeg", `foto_${Date.now()}.jpg`);
+        if (midiasId === "Sem mídia") midiasId = new Date().getTime();
+        const base64 = params[key].split(",")[1];
+        const blob = Utilities.newBlob(
+          Utilities.base64Decode(base64),
+          "image/jpeg",
+          `foto_viatura_${Date.now()}.jpg`
+        );
         const file = folder.createFile(blob);
         file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         midiaLinks.push(getDirectDownloadLink(file));
@@ -45,18 +58,20 @@ function doPost(e) {
     }
 
     // -----------------------------
-    // FOTOS CARTÃO DE ABASTECIMENTO
+    // ⛽ FOTOS DO CARTÃO DE ABASTECIMENTO
     // -----------------------------
     let cartaoLinks = [];
     let cartaoId = "Sem cartão";
 
     for (let key in params) {
       if (key.startsWith("CartaoBase64_")) {
-        if (cartaoId === "Sem cartão") {
-          cartaoId = new Date().getTime();
-        }
-        const base64 = params[key].split(',')[1];
-        const blob = Utilities.newBlob(Utilities.base64Decode(base64), "image/jpeg", `cartao_${Date.now()}.jpg`);
+        if (cartaoId === "Sem cartão") cartaoId = new Date().getTime();
+        const base64 = params[key].split(",")[1];
+        const blob = Utilities.newBlob(
+          Utilities.base64Decode(base64),
+          "image/jpeg",
+          `cartao_${Date.now()}.jpg`
+        );
         const file = folder.createFile(blob);
         file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         cartaoLinks.push(getDirectDownloadLink(file));
@@ -68,12 +83,12 @@ function doPost(e) {
     }
 
     // -----------------------------
-    // ASSINATURA
+    // ✍️ ASSINATURA
     // -----------------------------
     let assinaturaURL = "Sem assinatura";
     if (params.AssinaturaBase64 && params.AssinaturaBase64.includes(",")) {
       try {
-        const base64Data = params.AssinaturaBase64.split(',')[1];
+        const base64Data = params.AssinaturaBase64.split(",")[1];
         const blob = Utilities.newBlob(
           Utilities.base64Decode(base64Data),
           "image/png",
@@ -88,12 +103,12 @@ function doPost(e) {
     }
 
     // -----------------------------
-    // PDF
+    // 🧾 GERA O PDF
     // -----------------------------
     const pdfURL = gerarChecklistPDF(params, assinaturaURL, midiaLinks, cartaoLinks);
 
     // -----------------------------
-    // PLANILHA RESPOSTAS
+    // 🗂️ REGISTRA NA PLANILHA
     // -----------------------------
     const novaLinha = [
       new Date(),
@@ -122,26 +137,41 @@ function doPost(e) {
       params.QtdCones || "",
       params.OutrosProblemas || "",
       midiasId,
-      cartaoId,  // ✅ agora está certo
+      cartaoId,
       assinaturaURL,
       pdfURL
     ];
 
     sheet.appendRow(novaLinha);
 
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "success",
-      message: "Checklist enviado e PDF gerado!",
-      pdf: pdfURL
-    })).setMimeType(ContentService.MimeType.JSON);
+    // -----------------------------
+    // 🔁 RETORNA AO FRONT-END
+    // -----------------------------
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        status: "success",
+        message: "Checklist enviado e PDF gerado com sucesso!",
+        pdf: pdfURL
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "error",
-      message: err.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(
+      JSON.stringify({
+        status: "error",
+        message: err.toString()
+      })
+    ).setMimeType(ContentService.MimeType.JSON);
   }
 }
+
+// ======================================================
+// Função auxiliar: gera link direto de download do Drive
+// ======================================================
+function getDirectDownloadLink(file) {
+  return "https://drive.google.com/uc?export=download&id=" + file.getId();
+}
+
 
 
 
@@ -155,7 +185,7 @@ função do pdf
 
 
 function gerarChecklistPDF(data, assinaturaURL, midiaLinks, cartaoLinks) {
-  const folderId = '1hpZIm3OedEs82yeLN6IG-z3RUu9QMv3w';
+  const folderId = '13ymXgVPbIzVdJK9IKpnd0-X-_6BBWXOe';
   const templateId = '1FoRErwkfgz1otLS1PGwRoFpAWC_qth3V2vNmDP9_ge4';
 
   const copy = DriveApp.getFileById(templateId).makeCopy(`${data.Prefixo} - ${data.Placa}`, DriveApp.getFolderById(folderId));
@@ -167,28 +197,39 @@ function gerarChecklistPDF(data, assinaturaURL, midiaLinks, cartaoLinks) {
   const maxY = 750;
   y = 160; // cursor global
 
+  // -----------------------------
+  // 🔧 Função auxiliar de bloco com altura dinâmica
+  // -----------------------------
   function adicionarBloco(titulo, conteudo, espacoApos = 10) {
     if (y + 40 > maxY) {
       slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
       y = 30;
     }
+
+    // Título
     const tituloShape = slide.insertTextBox(titulo, margin, y, larguraCaixa, 20);
     tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
     y += 22;
 
-    const conteudoShape = slide.insertTextBox(conteudo, margin, y, larguraCaixa, 400);
-    y += conteudoShape.getHeight() + espacoApos;
+    // Conteúdo (ajuste de altura automático)
+    const textoLimpo = (conteudo || "-").trim();
+    const linhas = textoLimpo.split("\n").length;
+    const alturaDinamica = Math.min(22 * linhas + 20, 1000); // cresce com base no texto
+
+    const conteudoShape = slide.insertTextBox(textoLimpo, margin, y, larguraCaixa, alturaDinamica);
+    conteudoShape.getText().getTextStyle().setFontSize(14);
+    y += alturaDinamica + espacoApos;
   }
 
   // -----------------------------
-  // Título
+  // Título principal
   // -----------------------------
   const tituloShape = slide.insertTextBox("CHECKLIST DE CAUTELA DE VIATURAS", margin, y, larguraCaixa, 30);
   tituloShape.getText().getTextStyle().setBold(true).setFontSize(22);
   y += 35;
 
   // -----------------------------
-  // Dados motorista
+  // DADOS DO MOTORISTA
   // -----------------------------
   const dadosMotorista = `
 Motorista: ${data.Motorista}
@@ -208,8 +249,22 @@ Km Próx. Revisão: ${data.KmProxRevisao}
   adicionarBloco("DADOS DO MOTORISTA", dadosMotorista, 4);
 
   // -----------------------------
-  // Checklist técnico
+  // CHECKLIST DE VERIFICAÇÃO
   // -----------------------------
+  const limparTexto = (valor) => (valor || "").replace(/\r?\n|\r/g, " ").trim();
+
+  data.NivelAgua = limparTexto(data.NivelAgua);
+  data.NivelOleo = limparTexto(data.NivelOleo);
+  data.NivelCombustivel = limparTexto(data.NivelCombustivel);
+  data.Pneus = limparTexto(data.Pneus);
+  data.GiroflexSirene = limparTexto(data.GiroflexSirene);
+  data.LampadasQueimadas = limparTexto(data.LampadasQueimadas);
+  data.Parabrisa = limparTexto(data.Parabrisa);
+  data.Radio = limparTexto(data.Radio);
+  data.EquipamentosObrigatorios = limparTexto(data.EquipamentosObrigatorios);
+  data.QtdCones = limparTexto(data.QtdCones);
+  data.OutrosProblemas = limparTexto(data.OutrosProblemas);
+
   const checklistTecnico = `
 Nível de Água: ${data.NivelAgua}
 Nível de Óleo: ${data.NivelOleo}
@@ -226,30 +281,32 @@ Outros Problemas: ${data.OutrosProblemas}
   adicionarBloco("CHECKLIST DE VERIFICAÇÃO", checklistTecnico, 10);
 
   // -----------------------------
-  // Fotos da Viatura
+  // FOTOS DA VIATURA
   // -----------------------------
   if (midiaLinks.length > 0) {
     adicionarSecaoImagens("FOTOS DA VIATURA", midiaLinks, presentation, larguraCaixa, margin, maxY);
   }
 
   // -----------------------------
-  // Cartão de Abastecimento
+  // CARTÃO DE ABASTECIMENTO
   // -----------------------------
   if (cartaoLinks && cartaoLinks.length > 0) {
     adicionarSecaoImagens("CARTÃO DE ABASTECIMENTO", cartaoLinks, presentation, larguraCaixa, margin, maxY);
   }
 
   // -----------------------------
-  // Assinatura
+  // ASSINATURA
   // -----------------------------
   if (assinaturaURL && assinaturaURL !== "Sem assinatura") {
     if (y + 80 > maxY) {
       slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
       y = 30;
     }
+
     const tituloShape = slide.insertTextBox("ASSINATURA", margin, y, larguraCaixa, 20);
     tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
     y += 22;
+
     try {
       const blob = UrlFetchApp.fetch(assinaturaURL).getBlob();
       slide.insertImage(blob, margin, y, 200, 60);
@@ -260,6 +317,9 @@ Outros Problemas: ${data.OutrosProblemas}
     }
   }
 
+  // -----------------------------
+  // Finaliza e gera PDF
+  // -----------------------------
   presentation.saveAndClose();
 
   const pdf = DriveApp.getFileById(presentation.getId()).getAs("application/pdf");
@@ -271,52 +331,10 @@ Outros Problemas: ${data.OutrosProblemas}
 }
 
 
-function getDirectDownloadLink(file) {
-  return "https://drive.google.com/uc?export=download&id=" + file.getId();
-}
-
-function adicionarSecaoImagens(titulo, links, presentation, larguraCaixa, margin, maxY) {
-  if (y + 100 > maxY) {
-    slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
-    y = 30;
-  }
-
-  const tituloShape = slide.insertTextBox(titulo, margin, y, larguraCaixa, 20);
-  tituloShape.getText().getTextStyle().setBold(true).setFontSize(18);
-  y += 30;
-
-  const larguraImg = 200;
-  const alturaImg = 150;
-  let x = margin;
-
-  links.forEach((url) => {
-    try {
-      const blob = UrlFetchApp.fetch(url).getBlob();
-      slide.insertImage(blob, x, y, larguraImg, alturaImg);
-
-      x += larguraImg + 20;
-      if (x + larguraImg > margin + larguraCaixa) {
-        x = margin;
-        y += alturaImg + 20;
-      }
-      if (y + alturaImg > maxY) {
-        slide = presentation.appendSlide(SlidesApp.PredefinedLayout.BLANK);
-        y = 30;
-        x = margin;
-      }
-    } catch (err) {
-      slide.insertTextBox("Erro ao carregar imagem: " + url, margin, y, larguraCaixa, 20);
-      y += 25;
-    }
-  });
-
-  y += alturaImg + 10;
-}
-
 ####################################################################################################################
 
 function consultarMidias(idRegistro) {
-  const PLANILHA_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
+  const PLANILHA_ID = "1v4exnILPrSI3GYEo30UYEnqsaqmMn2BnTiZBz4OuzSg";
   const midiasSheet = SpreadsheetApp.openById(PLANILHA_ID).getSheetByName("MIDIA");
   const dados = midiasSheet.getDataRange().getValues();
 
@@ -327,8 +345,11 @@ function consultarMidias(idRegistro) {
   }
 
   return "Sem mídias encontradas";
-} 
+}
 
+function getDirectDownloadLink(file) {
+  return "https://drive.google.com/uc?export=download&id=" + file.getId();
+}
 ####################################################################################################################
 
 function adicionarSecaoImagens(titulo, links, presentation, larguraCaixa, margin, maxY) {
@@ -374,7 +395,7 @@ function getDirectDownloadLink(file) {
 }
 
 function consultarMidias(idRegistro) {
-  const PLANILHA_ID = "1rF19ZUm0FymIjWRU5Qhzn_LkGmJT1i9akgyskPEsrr4";
+  const PLANILHA_ID = "1v4exnILPrSI3GYEo30UYEnqsaqmMn2BnTiZBz4OuzSg";
   const midiasSheet = SpreadsheetApp.openById(PLANILHA_ID).getSheetByName("MIDIA");
   const dados = midiasSheet.getDataRange().getValues();
 
@@ -385,6 +406,7 @@ function consultarMidias(idRegistro) {
   }
   return "Sem mídias encontradas";
 }
+
 #######################################################################################################################################################
 
 
@@ -398,4 +420,3 @@ function onEdit(e) {
     range.sort({column: 1, ascending: false}); // Ordena pela coluna A (data/hora) do mais recente p/ mais antigo
   }
 }
-  

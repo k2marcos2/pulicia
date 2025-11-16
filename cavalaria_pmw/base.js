@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('signature-pad');
 
   // 🔗 URL do App Script (substitua pela sua se for diferente)
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLOdM_RKWv3PmsGzR-Jggt5Ifh-1yZNgJM2G30Q7oFoMZnGqCrXzSiRuWdurGXPFIpBw/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGMrLznqKcVwRnfwjt4piTrEjqPfQT-gEqQK3KUL5ZIhXJXQ9LQtDn4gApIg9UxZuU1A/exec";
 
   // ===========================================
   // ⬇️ LÓGICA CONDICIONAL DOS CAMINHÕES (NOVO) ⬇️
