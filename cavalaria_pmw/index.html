@@ -12,7 +12,7 @@
 
 <body>
 
-  <h2>Checklist de Cautela de Viaturas - 1º BPM</h2>
+  <h2>Checklist de Cautela de Veiculos - Cavalaria</h2>
 
   <div class="alerta-limite">
     ⚠️ <strong>Aviso:</strong> Este formulário permite no máximo <strong>8 fotos capturadas pela câmera</strong>.
@@ -58,7 +58,7 @@
     </select>
 
     <label>Veículo*</label>
-    <select name="Veiculo" required>
+    <select name="Veiculo" id="veiculo-select" required> 
       <option value="">Selecione...</option>
       <option value="Duster">Duster</option>
       <option value="Gol">Gol</option>
@@ -71,6 +71,8 @@
       <option value="Yaris">Yaris</option>
       <option value="Quadriciclo">Quadriciclo</option>
       <option value="Corolla">Corolla</option>
+      <option value="Caminhão Novo">Caminhão Novo</option>
+      <option value="Caminhão Velho">Caminhão Velho</option>
     </select>
 
     <label>Prefixo*</label>
@@ -154,6 +156,60 @@
 
     <label>Outros Problemas - Descrever</label>
     <textarea name="OutrosProblemas" rows="4"></textarea>
+
+    <div id="campos-caminhao-container" style="display: none;">
+    
+        <hr> <h3>Itens Específicos (Caminhão)</h3>
+
+        <label>Motor da Rampa (Caminhão Velho)</label>
+        <select name="MotorRampa">
+          <option value="N/A">N/A</option>
+          <option value="Funcionando">Funcionando</option>
+          <option value="Não Funcionando">Não Funcionando</option>
+        </select>
+    
+        <label>Chave Geral (Caminhão Novo)</label>
+        <select name="ChaveGeral">
+          <option value="N/A">N/A</option>
+          <option value="Ligado">Ligado</option>
+          <option value="Desligado">Desligado</option>
+        </select>
+        
+        <label>Motor Elétrico/Hidráulico</label>
+        <select name="MotorEletricoHidraulico">
+          <option value="N/A">N/A</option>
+          <option value="Funcionando">Funcionando</option>
+          <option value="Não Funcionando">Não Funcionando</option>
+        </select>
+        
+        <label>Climatizador</label>
+        <select name="Climatizador">
+          <option value="N/A">N/A</option>
+          <option value="Funcionando">Funcionando</option>
+          <option value="Não Funcionando">Não Funcionando</option>
+        </select>
+    
+        <label>Multimídia</label>
+        <select name="Multimidia">
+          <option value="N/A">N/A</option>
+          <option value="Funcionando">Funcionando</option>
+          <option value="Não Funcionando">Não Funcionando</option>
+        </select>
+        
+        <label>Ar-condicionado do Baú</label>
+        <select name="ArBau">
+          <option value="N/A">N/A</option>
+          <option value="Funcionando">Funcionando</option>
+          <option value="Não Funcionando">Não Funcionando</option>
+        </select>
+        
+        <label>Quantidade de Cavalos</label>
+        <input type="number" name="QtdCavalos" placeholder="N/A">
+        
+        <label>Quantidade de Câmeras Funcionando</label>
+        <input type="number" name="QtdCameras" placeholder="N/A">
+
+        <hr> </div>
 
     <!-- 📷 Viatura -->
     <label>Fotos da Viatura</label>

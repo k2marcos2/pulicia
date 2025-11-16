@@ -6,6 +6,39 @@ document.addEventListener('DOMContentLoaded', () => {
   // 🔗 URL do App Script (substitua pela sua se for diferente)
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLOdM_RKWv3PmsGzR-Jggt5Ifh-1yZNgJM2G30Q7oFoMZnGqCrXzSiRuWdurGXPFIpBw/exec";
 
+  // ===========================================
+  // ⬇️ LÓGICA CONDICIONAL DOS CAMINHÕES (NOVO) ⬇️
+  // ===========================================
+  const veiculoSelect = document.getElementById('veiculo-select');
+  const caminhaoContainer = document.getElementById('campos-caminhao-container');
+
+  // Verifica se os elementos existem na página antes de adicionar o "ouvinte"
+  if (veiculoSelect && caminhaoContainer) {
+    
+    veiculoSelect.addEventListener('change', () => {
+      const veiculoSelecionado = veiculoSelect.value;
+      
+      // Verifica se o valor selecionado é um dos caminhões
+      if (veiculoSelecionado === "Caminhão Novo" || veiculoSelecionado === "Caminhão Velho") {
+        caminhaoContainer.style.display = 'block'; // Mostra os campos
+      } else {
+        caminhaoContainer.style.display = 'none'; // Esconde os campos
+        
+        // Opcional: Se quiser limpar os campos quando esconder, descomente o bloco abaixo
+        /*
+        const inputs = caminhaoContainer.querySelectorAll('input, select');
+        inputs.forEach(input => {
+          if (input.type === 'number') input.value = '';
+          else if (input.tagName === 'SELECT') input.value = 'N/A';
+        });
+        */
+      }
+    });
+  }
+  // ===========================================
+  // ⬆️ FIM DA LÓGICA CONDICIONAL ⬆️
+  // ===========================================
+
   // ===============================
   // AJUSTE DE CANVAS (ASSINATURA)
   // ===============================
