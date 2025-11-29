@@ -305,3 +305,14 @@ video {
 .btn-voltar:hover {
   background-color: #004aad;
 }
+
+@media (max-width: 600px) {
+  body {
+    padding: 15px;
+  }
+
+  .btn-voltar {
+    position: static;
+    margin-bottom: 20px;
+  }
+}
