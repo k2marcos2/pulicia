@@ -6,6 +6,9 @@ function redirecionar(tipo) {
     case 'Cavalaria':
       window.location.href = "cavalaria_pmw/index.html";
       break
+    case '6_batalhão':
+      window.location.href = "6_batalhão/index.html";
+      break
     default:
       alert('Tipo de formulário inválido');
   }
