@@ -83,10 +83,10 @@
     <input type="number" name="KmAtual" required>
 
     <label>Km da Próx. Revisão</label>
-    <input type="number" name="KmProxRevisao">
+    <input type="number" name="KmProxRevisao" required>
 
     <label>Nível de Água do Radiador</label>
-    <select name="NivelAgua">
+    <select name="NivelAgua" required>
       <option>Normal</option>
       <option>Baixo</option>
     </select>
@@ -124,7 +124,7 @@
     </select>
 
     <label>Lâmpadas queimadas</label>
-    <textarea name="LampadasQueimadas" rows="3"></textarea>
+    <textarea name="LampadasQueimadas" rows="3" required></textarea>
 
     <label>Parabrisa*</label>
     <select name="Parabrisa" required>
@@ -141,7 +141,7 @@
     </select>
 
     <label>Equipamentos Obrigatórios</label>
-    <div class="checkbox-group">
+    <div class="checkbox-group" required>
       <label><input type="checkbox" name="EquipamentosObrigatorios" value="Chave de roda"> Chave de roda</label>
       <label><input type="checkbox" name="EquipamentosObrigatorios" value="Macaco"> Macaco</label>
       <label><input type="checkbox" name="EquipamentosObrigatorios" value="Pneu de step"> Pneu de step</label>
@@ -150,7 +150,7 @@
     </div>
 
     <label>Quantidade de Cones</label>
-    <input type="number" name="QtdCones">
+    <input type="number" name="QtdCones"required>
 
     <label>Outros Problemas - Descrever</label>
     <textarea name="OutrosProblemas" rows="4"></textarea>
@@ -183,7 +183,7 @@
     <!-- ✍ Assinatura -->
     <label>Assinatura:</label>
     <canvas id="signature-pad"></canvas>
-    <input type="hidden" name="AssinaturaBase64" id="assinatura-base64">
+    <input type="hidden" name="AssinaturaBase64" id="assinatura-base64" required>
     <button type="button" id="clear-signature">Limpar Assinatura</button>
 
     <br><br>
