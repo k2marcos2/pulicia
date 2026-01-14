@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('signature-pad');
 
   // 🔗 URL do App Script (substitua pela sua se for diferente)
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlAMesxlCkfCRwXltaQYO343acAshSLgmAGQiitwjNJnjtCcdFDS2Mln8NK4lqZnln/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcI4VkG917D2U4KZb_alFV-4KogwESKbhJIgx9tb5XWokjh-Y4V41RtRtjv29W4Hjs/exec";
 
   // ===============================
   // AJUSTE DE CANVAS (ASSINATURA)
