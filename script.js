@@ -12,6 +12,9 @@ function redirecionar(tipo) {
     case '13_batalhão':
       window.location.href = "13_batalhão/index.html";
       break
+    case '1_CIPM':
+      window.location.href = "1_CIPM/index.html";
+      break
     default:
       alert('Tipo de formulário inválido');
   }
