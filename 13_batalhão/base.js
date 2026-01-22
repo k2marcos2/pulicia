@@ -3,8 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const midiaInputGaleria = document.getElementById('midia');
   const canvas = document.getElementById('signature-pad');
 
-  // 🔗 URL do App Script (substitua pela sua se for diferente)
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcI4VkG917D2U4KZb_alFV-4KogwESKbhJIgx9tb5XWokjh-Y4V41RtRtjv29W4Hjs/exec";
+  // 🔗 URL do App Script
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbygMLBKAOn12y1xdRcoIAQvrkcInOulhegoOr-fbKMO_VKDZsOfHlvgICXfAGaznxku/exec";
 
   // ===============================
   // AJUSTE DE CANVAS (ASSINATURA)
@@ -21,6 +21,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const signaturePad = new SignaturePad(canvas);
   const clearButton = document.getElementById('clear-signature');
+
+  // ===============================
+  // SELECT "OUTRO" (MOSTRAR CAMPO EXTRA)
+  // ===============================
+  function setupSelectOutro() {
+    const selects = document.querySelectorAll(".select-outro");
+
+    selects.forEach((select) => {
+      const boxId = select.dataset.outro;
+      const box = document.getElementById(boxId);
+      if (!box) return;
+
+      const extraField = box.querySelector("input, textarea");
+      if (!extraField) return;
+
+      function updateUI() {
+        const isOutro = (select.value || "").toLowerCase() === "outro";
+        box.style.display = isOutro ? "block" : "none";
+        extraField.required = isOutro;
+        if (!isOutro) extraField.value = "";
+      }
+
+      select.addEventListener("change", updateUI);
+      updateUI();
+    });
+  }
+
+  setupSelectOutro();
 
   // ===============================
   // VIATURA
@@ -158,6 +186,28 @@ document.addEventListener('DOMContentLoaded', () => {
   clearButton.addEventListener('click', () => signaturePad.clear());
 
   // ===============================
+  // HELPERS
+  // ===============================
+  function toBase64(file) {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function applyOutroToFormData(formData, selectName, extraName) {
+    const select = document.querySelector(`select[name="${selectName}"]`);
+    const extra = document.querySelector(`[name="${extraName}"]`);
+    if (!select || !extra) return;
+
+    if ((select.value || "").toLowerCase() === "outro") {
+      const txt = (extra.value || "").trim();
+      formData.set(selectName, `Outro: ${txt}`);
+    }
+  }
+
+  // ===============================
   // ENVIO DO FORMULÁRIO
   // ===============================
   form.addEventListener('submit', async (e) => {
@@ -166,6 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     submitButton.disabled = true;
     submitButton.textContent = "Enviando...";
 
+    // ✅ valida assinatura
     if (signaturePad.isEmpty()) {
       alert("Por favor, forneça sua assinatura.");
       submitButton.disabled = false;
@@ -173,14 +224,35 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // ✅ valida DPMs (pelo menos 1)
+    const dpmSelect = document.getElementById("DPMSelect");
+    const dpmsSelecionadas = Array.from(dpmSelect.selectedOptions).map(o => o.value);
+    if (dpmsSelecionadas.length === 0) {
+      alert("Selecione pelo menos 1 DPM.");
+      submitButton.disabled = false;
+      submitButton.textContent = "Enviar";
+      return;
+    }
+
     const formData = new FormData(form);
 
-    // ✅ Junta todos os checkboxes de Equipamentos Obrigatórios
+    // ✅ Ajusta DPMs[] para uma única string "DPM, DPM, ..."
+    formData.delete("DPMs[]");
+    formData.append("DPM", dpmsSelecionadas.join(", "));
+
+    // ✅ Junta checkboxes de Equipamentos Obrigatórios
     const equipamentos = Array.from(
       document.querySelectorAll('input[name="EquipamentosObrigatorios"]:checked')
     ).map(el => el.value);
     formData.delete("EquipamentosObrigatorios");
     formData.append("EquipamentosObrigatorios", equipamentos.join(", "));
+
+    // ✅ Aplica "Outro: texto" nos selects configurados
+    applyOutroToFormData(formData, "NivelCombustivel", "NivelCombustivelOutro");
+    applyOutroToFormData(formData, "Pneus", "PneusOutro");
+    applyOutroToFormData(formData, "GiroflexSirene", "GiroflexSireneOutro");
+    applyOutroToFormData(formData, "Parabrisa", "ParabrisaOutro");
+    applyOutroToFormData(formData, "Radio", "RadioOutro");
 
     // ✅ Assinatura
     formData.set('AssinaturaBase64', signaturePad.toDataURL('image/png'));
@@ -224,12 +296,4 @@ document.addEventListener('DOMContentLoaded', () => {
       submitButton.textContent = "Enviar";
     }
   });
-
-  function toBase64(file) {
-    return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(file);
-    });
-  }
 });
