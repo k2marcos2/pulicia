@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const midiaInputGaleria = document.getElementById('midia');
   const canvas = document.getElementById('signature-pad');
 
-  // 🔗 URL do App Script (substitua pela sua se for diferente)
+  // 🔗 URL do App Script (1º BPM)
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMCJtpD-KcJhBqJZFPRdC61_B6_hCXZbFePImFnKOGzdBP8jnLjgWAiWAr5DcFfR_67Q/exec";
 
   // ===============================
@@ -21,6 +21,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const signaturePad = new SignaturePad(canvas);
   const clearButton = document.getElementById('clear-signature');
+
+  // ===============================
+  // SELECT "OUTRO"
+  // ===============================
+  function setupSelectOutro() {
+    document.querySelectorAll(".select-outro").forEach(select => {
+      const box = document.getElementById(select.dataset.outro);
+      if (!box) return;
+
+      const extraField = box.querySelector("input, textarea");
+      if (!extraField) return;
+
+      function toggle() {
+        const isOutro = (select.value || "").toLowerCase() === "outro";
+        box.style.display = isOutro ? "block" : "none";
+        extraField.required = isOutro;
+        if (!isOutro) extraField.value = "";
+      }
+
+      select.addEventListener("change", toggle);
+      toggle();
+    });
+  }
+  setupSelectOutro();
+
+  function applyOutroToFormData(formData, selectName, extraName) {
+    const select = document.querySelector(`select[name="${selectName}"]`);
+    const extra = document.querySelector(`[name="${extraName}"]`);
+    if (!select || !extra) return;
+
+    if ((select.value || "").toLowerCase() === "outro") {
+      const txt = (extra.value || "").trim();
+      formData.set(selectName, `Outro: ${txt}`);
+    }
+  }
 
   // ===============================
   // VIATURA
@@ -181,6 +216,13 @@ document.addEventListener('DOMContentLoaded', () => {
     ).map(el => el.value);
     formData.delete("EquipamentosObrigatorios");
     formData.append("EquipamentosObrigatorios", equipamentos.join(", "));
+
+    // ✅ Aplica "Outro: texto" nos selects
+    applyOutroToFormData(formData, "NivelCombustivel", "NivelCombustivelOutro");
+    applyOutroToFormData(formData, "Pneus", "PneusOutro");
+    applyOutroToFormData(formData, "GiroflexSirene", "GiroflexSireneOutro");
+    applyOutroToFormData(formData, "Parabrisa", "ParabrisaOutro");
+    applyOutroToFormData(formData, "Radio", "RadioOutro");
 
     // ✅ Assinatura
     formData.set('AssinaturaBase64', signaturePad.toDataURL('image/png'));
