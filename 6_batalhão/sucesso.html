@@ -14,11 +14,19 @@
   </div>
 
   <script>
-    const pdfUrl = sessionStorage.getItem("pdfUrl");
+    const qs = new URLSearchParams(window.location.search);
+    const pdfFromQuery = qs.get("pdf");
+
+    const pdfUrl =
+      pdfFromQuery ||
+      sessionStorage.getItem("pdfUrl") ||
+      localStorage.getItem("pdfUrl");
+
     if (pdfUrl) {
       document.getElementById("pdf-link").href = pdfUrl;
     } else {
-      document.querySelector(".container").innerHTML = "<h2>Erro</h2><p>PDF não encontrado. Tente reenviar o formulário.</p>";
+      document.querySelector(".container").innerHTML =
+        "<h2>Erro</h2><p>PDF não encontrado. Volte e tente reenviar.</p>";
     }
   </script>
 </body>

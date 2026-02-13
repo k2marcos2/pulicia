@@ -1,10 +1,19 @@
+/**
+ * Sistema de Checklist e Cautela Digital de Viaturas
+ * Autor: Marcos Brito Feitosa
+ * Versão: 1.1
+ * Direitos Autorais © 2026
+ *
+ * Uso autorizado apenas mediante permissão do autor.
+ */
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('checklist-form');
   const midiaInputGaleria = document.getElementById('midia');
   const canvas = document.getElementById('signature-pad');
 
   // 🔗 URL do App Script
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwj6VCUtztPrZ3DQYEXxqL96goQNNc2x1_XHqBqFN2FU9M8YFOMqto8WNp5Ds1t1gXw/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsMcHWZW1X2uB7bMlgTHBDxL4JVzL--dpaatF813JHmgKOfMs2Mqq-5P_qTsa8KZGf/exec";
 
   // ===============================
   // AJUSTE DE CANVAS (ASSINATURA)
@@ -88,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     canvasTemp.getContext('2d').drawImage(videoViatura, 0, 0);
 
     canvasTemp.toBlob(blob => {
-      const index = fotosViatura.push(blob) - 1;
+      fotosViatura.push(blob);
 
       const wrapper = document.createElement('div');
       wrapper.style.display = "inline-block";
@@ -107,8 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
       btnRemover.className = "btn-remover-foto";
 
       btnRemover.addEventListener('click', () => {
+        // remove pelo src (mais seguro do que index fixo)
+        const idx = fotosViatura.findIndex(b => URL.createObjectURL(b) === img.src);
+        if (idx >= 0) fotosViatura.splice(idx, 1);
         wrapper.remove();
-        fotosViatura.splice(index, 1);
       });
 
       wrapper.appendChild(img);
@@ -153,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     canvasTemp.getContext('2d').drawImage(videoCartao, 0, 0);
 
     canvasTemp.toBlob(blob => {
-      const index = fotosCartao.push(blob) - 1;
+      fotosCartao.push(blob);
 
       const wrapper = document.createElement('div');
       wrapper.style.display = "inline-block";
@@ -172,8 +183,9 @@ document.addEventListener('DOMContentLoaded', () => {
       btnRemover.className = "btn-remover-foto";
 
       btnRemover.addEventListener('click', () => {
+        const idx = fotosCartao.findIndex(b => URL.createObjectURL(b) === img.src);
+        if (idx >= 0) fotosCartao.splice(idx, 1);
         wrapper.remove();
-        fotosCartao.splice(index, 1);
       });
 
       wrapper.appendChild(img);
@@ -193,79 +205,50 @@ document.addEventListener('DOMContentLoaded', () => {
   clearButton.addEventListener('click', () => signaturePad.clear());
 
   // ===============================
-  // ENVIO DO FORMULÁRIO
+  // HELPERS ENVIO (RETRY / PARSE SEGURO)
   // ===============================
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitButton = document.getElementById('submit-btn');
-    submitButton.disabled = true;
-    submitButton.textContent = "Enviando...";
+  function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
 
-    if (signaturePad.isEmpty()) {
-      alert("Por favor, forneça sua assinatura.");
-      submitButton.disabled = false;
-      submitButton.textContent = "Enviar";
-      return;
-    }
+  async function enviarComRetry(formData, tentativas = 3) {
+    let ultimoErro;
 
-    const formData = new FormData(form);
+    for (let i = 0; i < tentativas; i++) {
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: formData,
+          cache: "no-store"
+        });
 
-    // ✅ Junta todos os checkboxes de Equipamentos Obrigatórios
-    const equipamentos = Array.from(
-      document.querySelectorAll('input[name="EquipamentosObrigatorios"]:checked')
-    ).map(el => el.value);
-    formData.delete("EquipamentosObrigatorios");
-    formData.append("EquipamentosObrigatorios", equipamentos.join(", "));
+        // iPhone/Safari às vezes quebra no response.json()
+        const text = await response.text();
 
-    // ✅ APLICA "Outro: texto" nos selects
-    applyOutroToFormData(formData, "NivelCombustivel", "NivelCombustivelOutro");
-    applyOutroToFormData(formData, "Pneus", "PneusOutro");
-    applyOutroToFormData(formData, "GiroflexSirene", "GiroflexSireneOutro");
-    applyOutroToFormData(formData, "Parabrisa", "ParabrisaOutro");
-    applyOutroToFormData(formData, "Radio", "RadioOutro");
+        let result;
+        try {
+          result = JSON.parse(text);
+        } catch (e) {
+          throw new Error("Resposta inválida do servidor (JSON truncado).");
+        }
 
-    // ✅ Assinatura
-    formData.set('AssinaturaBase64', signaturePad.toDataURL('image/png'));
+        if (!response.ok) {
+          throw new Error(result?.message || `HTTP ${response.status}`);
+        }
 
-    // ✅ Fotos da viatura
-    const viaturaBase64 = await Promise.all(fotosViatura.map(file => toBase64(file)));
-    viaturaBase64.forEach((base64, i) => formData.append(`MidiaBase64_${i}`, base64));
+        if (result?.status === "success" && result?.pdf) {
+          return result; // ✅ sempre com PDF
+        }
 
-    // ✅ Fotos do cartão
-    const cartaoBase64 = await Promise.all(fotosCartao.map(file => toBase64(file)));
-    cartaoBase64.forEach((base64, i) => formData.append(`CartaoBase64_${i}`, base64));
-
-    // ✅ Galeria
-    const galeriaFiles = Array.from(midiaInputGaleria.files);
-    for (let i = 0; i < galeriaFiles.length; i++) {
-      const base64 = await toBase64(galeriaFiles[i]);
-      formData.append(`MidiaBase64_${viaturaBase64.length + i}`, base64);
-    }
-
-    // ===============================
-    // ENVIA PARA O APP SCRIPT
-    // ===============================
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: "POST",
-        body: formData
-      });
-
-      const result = await response.json();
-
-      if (result.status === "success") {
-        sessionStorage.setItem("pdfUrl", result.pdf);
-        window.location.href = "sucesso.html";
-      } else {
-        alert("Erro: " + result.message);
+        throw new Error(result?.message || "Servidor não retornou o link do PDF.");
+      } catch (err) {
+        ultimoErro = err;
+        await sleep(900 * (i + 1)); // backoff
       }
-    } catch (err) {
-      alert("Erro ao enviar: " + err.message);
-    } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = "Enviar";
     }
-  });
+
+    throw ultimoErro;
+  }
 
   function toBase64(file) {
     return new Promise(resolve => {
@@ -274,4 +257,77 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.readAsDataURL(file);
     });
   }
+
+  // ===============================
+  // ENVIO DO FORMULÁRIO
+  // ===============================
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const submitButton = document.getElementById('submit-btn');
+    submitButton.disabled = true;
+    submitButton.textContent = "Enviando...";
+
+    try {
+      if (signaturePad.isEmpty()) {
+        alert("Por favor, forneça sua assinatura.");
+        return;
+      }
+
+      const formData = new FormData(form);
+
+      // ✅ RequestId fixo para retry (IDEMPOTÊNCIA no servidor)
+      const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      formData.set("RequestId", requestId);
+
+      // ✅ Junta todos os checkboxes de Equipamentos Obrigatórios
+      const equipamentos = Array.from(
+        document.querySelectorAll('input[name="EquipamentosObrigatorios"]:checked')
+      ).map(el => el.value);
+      formData.delete("EquipamentosObrigatorios");
+      formData.append("EquipamentosObrigatorios", equipamentos.join(", "));
+
+      // ✅ APLICA "Outro: texto" nos selects
+      applyOutroToFormData(formData, "NivelCombustivel", "NivelCombustivelOutro");
+      applyOutroToFormData(formData, "Pneus", "PneusOutro");
+      applyOutroToFormData(formData, "GiroflexSirene", "GiroflexSireneOutro");
+      applyOutroToFormData(formData, "Parabrisa", "ParabrisaOutro");
+      applyOutroToFormData(formData, "Radio", "RadioOutro");
+
+      // ✅ Assinatura
+      formData.set('AssinaturaBase64', signaturePad.toDataURL('image/png'));
+
+      // ✅ Fotos da viatura (câmera)
+      const viaturaBase64 = await Promise.all(fotosViatura.map(file => toBase64(file)));
+      viaturaBase64.forEach((base64, i) => formData.append(`MidiaBase64_${i}`, base64));
+
+      // ✅ Fotos do cartão (câmera)
+      const cartaoBase64 = await Promise.all(fotosCartao.map(file => toBase64(file)));
+      cartaoBase64.forEach((base64, i) => formData.append(`CartaoBase64_${i}`, base64));
+
+      // ✅ Galeria
+      const galeriaFiles = Array.from(midiaInputGaleria.files || []);
+      for (let i = 0; i < galeriaFiles.length; i++) {
+        const base64 = await toBase64(galeriaFiles[i]);
+        formData.append(`MidiaBase64_${viaturaBase64.length + i}`, base64);
+      }
+
+      // ===============================
+      // ENVIA PARA O APP SCRIPT (ROBUSTO)
+      // ===============================
+      const result = await enviarComRetry(formData, 3);
+
+      // ✅ guarda o PDF (session + local) e passa na URL também
+      sessionStorage.setItem("pdfUrl", result.pdf);
+      localStorage.setItem("pdfUrl", result.pdf);
+
+      window.location.href = `sucesso.html?pdf=${encodeURIComponent(result.pdf)}`;
+
+    } catch (err) {
+      alert("Erro ao enviar: " + err.message);
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = "Enviar";
+    }
+  });
 });

@@ -1,3 +1,14 @@
+/**
+ * Sistema de Checklist e Cautela Digital de Viaturas
+ * Autor: Marcos Brito Feitosa
+ * Versão: 1.1
+ * Direitos Autorais © 2026
+ *
+ * Uso autorizado apenas mediante permissão do autor.
+ */
+
+
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('checklist-form');
   const midiaInputGaleria = document.getElementById('midia');
