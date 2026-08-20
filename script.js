@@ -1,0 +1,34 @@
+ /**
+ * Sistema de Checklist e Cautela Digital de Viaturas
+ * Autor: Marcos Brito Feitosa
+ * Versão: 1.1
+ * Direitos Autorais © 2026
+ *
+ * Uso autorizado apenas mediante permissão do autor.
+ */ 
+
+function redirecionar(tipo) {
+  switch (tipo) {
+    case '1_batalhão':
+      window.location.href = "1_batalhão/index.html";
+      break;
+    case 'Cavalaria':
+      window.location.href = "cavalaria_pmw/index.html";
+      break
+    case '6_batalhão':
+      window.location.href = "6_batalhão/index.html";
+      break
+    case '13_batalhão':
+      window.location.href = "13_batalhão/index.html";
+      break
+    case '1_CIPM':
+      window.location.href = "1_CIPM/index.html";
+      break
+    default:
+      alert('Tipo de formulário inválido');
+  }
+}
+
+
+
+
